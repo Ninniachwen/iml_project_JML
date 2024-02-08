@@ -51,12 +51,12 @@ class Mnist_Model(nn.Module):
         #return F.log_softmax(x)
         return x
     
-    def dataloader(self, train, batch_size):
+    def dataloader(self, train:bool, batch_size:int, filepath:str):
         mean_mnist = 0.1307
         std_dev_mnist = 0.1307
         return torch.utils.data.DataLoader(
             torchvision.datasets.MNIST(
-                '/files/',
+                filepath,
                 train=train,
                 download=True, 
                 transform=torchvision.transforms.Compose([
@@ -84,34 +84,34 @@ def plot_data(data_loader):
     fig.show()
 
 
-def simplex_re(model_path:str, optimizer_path:str, decompostion_size = 5, test_size=1, corpus_size=1000, epochs = 10000, reg_factor=1.0, test_id=22):
+def simplex_re(filepath:str, decompostion_size=5, epochs=10000, reg_factor=1.0,batch_size_train=64, batch_size_test=1000, test_size=1000, corpus_size=1000,  test_id=22):
     torch.manual_seed(seed=42)
 
     # load Model
     classifier = Mnist_Model()
-    classifier.load_state_dict(torch.load(model_path))
+    classifier.load_state_dict(torch.load(os.path.join(filepath, "model_cv0.pth")))
     #classifier.to("cpu")
     classifier.eval()
 
     # prepare data
-    corpus_loader = classifier.dataloader(train=True, batch_size=corpus_size)
+    corpus_loader = classifier.dataloader(train=True, batch_size=corpus_size, filepath=filepath)
     _, (corpus_data, _) = next(enumerate(corpus_loader))
-    test_loader = classifier.dataloader(train=False, batch_size=test_size)
+    test_loader = classifier.dataloader(train=False, batch_size=test_size, filepath=filepath)
     _, (test_data, _) = next(enumerate(test_loader))
     if test_id < test_size:
         test_data_point = test_data[test_id : test_id + 1].detach()    #selects a single test-datapoint
     else:
-        test_data_point = test_data
+        test_data_point = test_data.detach()
     #plot_data(test_loader)
 
     # 
-    corpus_latent = classifier.latent(corpus_data).detach()
+    corpus_latent_orig = classifier.latent(corpus_data).detach()
     test_latent = classifier.latent(test_data_point).detach()
 
     scheduler = ExponentialScheduler(x_init=0.1, x_final=1000, n_epoch=20000)
     
     #simplex.fit
-    W_0 = torch.zeros((test_size, corpus_size), requires_grad=True)
+    W_0 = torch.zeros((test_latent.shape[0], corpus_size), requires_grad=True)
     optimizer = torch.optim.Adam([W_0])
     
     for epoch in range(epochs):
@@ -119,7 +119,7 @@ def simplex_re(model_path:str, optimizer_path:str, decompostion_size = 5, test_s
         optimizer.zero_grad()
         weights = F.softmax(W_0, dim=-1)
         corpus_latent = torch.einsum(
-            "ij,jk->ik", weights, corpus_latent
+            "ij,jk->ik", weights, corpus_latent_orig
         )
         error = ((corpus_latent - test_latent) ** 2).sum()
         weights_sorted = torch.sort(weights)[0]
@@ -138,7 +138,7 @@ def simplex_re(model_path:str, optimizer_path:str, decompostion_size = 5, test_s
     # end of fit
     weights = torch.softmax(W_0, dim=-1).detach()
     
-    assert test_id < test_size
+    #assert test_id < test_size
     weights = weights[test_id].numpy()
     sort_id = np.argsort(weights)[::-1]
     
@@ -175,7 +175,6 @@ def simplex_re(model_path:str, optimizer_path:str, decompostion_size = 5, test_s
 
 if __name__ == "__main__":
     cwd = os.getcwd()
-    model_path = os.path.join(cwd, "iml", "project-jml-project", "reimplementation", "model.pth")
-    optimizer_path = os.path.join(cwd, "iml", "project-jml-project", "reimplementation",  "optimizer.pth")
+    file_path = os.path.join(cwd, "iml", "project-jml-project", "files")
 
-    simplex_re(model_path, optimizer_path)
+    simplex_re(file_path)
