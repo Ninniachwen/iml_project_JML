@@ -118,19 +118,25 @@ def do_simplex(model_type, corpus_inputs, corpus_latents, test_inputs, test_late
                 )
             reg_factor = scheduler.step(reg_factor)
             #TODO: from simplex
+
+        weights_softmax = torch.softmax(W_0, dim=-1).detach()
         # end of fit
             
-        weights = torch.softmax(W_0, dim=-1).detach()
-        weights = weights[test_id].numpy() # only single test item out of batch
-        sort_id = np.argsort(weights)[::-1]
+       
+        weights_1_sample = weights_softmax[test_id].numpy() # only single test item out of batch
+        sort_id = np.argsort(weights_1_sample)[::-1]
+
+        latent_rep_approx = weights_softmax @ corpus_latents
+        latent_rep_true = test_latents  # test for shape=10,50 & requires_grad=False
 
         corpus_decomposition = []
-        
         for i in sort_id:
-            corpus_decomposition.append((weights[i], corpus_inputs[i]))     # error: index 74 is out of bounds for axis 0 with size 10
+            corpus_decomposition.append((weights_1_sample[i], corpus_inputs[i]))
 
         jacobian = []
     
+
+
     if model_type is Model_Type.TORCH_CONV:
         print(f"Starting on cv {cv} with our own model!")
         model = Simplex_Model(size_corpus, size_test)
@@ -163,8 +169,8 @@ def do_simplex(model_type, corpus_inputs, corpus_latents, test_inputs, test_late
                 latent_rep_true, latent_rep_approx.detach().numpy()
             )
     
-    most_important_example = weights[0].argmax()  # for test example 0
-    fig1 = plot_mnist(test_inputs[0][0], "Test example 0")
+    most_important_example = weights[test_id].argmax()  # for test example 0
+    fig1 = plot_mnist(test_inputs[test_id][0], "Test example {test_id}")
     fig2 = plot_mnist(corpus_inputs[most_important_example][0], f"M.i. attribution to example 0 (corpus id {most_important_example})")
     fig1.show()
     fig2.show()
