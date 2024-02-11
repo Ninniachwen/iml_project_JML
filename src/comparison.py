@@ -102,16 +102,16 @@ def do_simplex(model_type, data, cv, n_epoch, decompostion_size, test_id):
 
     if model_type is Model_Type.ORIGINAL:
         print(f"Starting on cv {cv} with the original model!")
-        latent_rep_approx, weights = m.original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size)
+        latent_rep_approx, weights, jacobian = m.original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, model)
 
 
     if model_type is Model_Type.ORIGINAL_COMPACT:
         print(f"Starting on cv {cv} with the compact original model!")
-        latent_rep_approx, weights = m.compact_original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size)
+        latent_rep_approx, weights, jacobian = m.compact_original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, model)
         
     if model_type is Model_Type.REIMPLEMENTED:
         print(f"Starting on cv {cv} with our own reimplemented model!")
-        latent_rep_approx, weights = m.reimplemented_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size)
+        latent_rep_approx, weights, jacobian = m.reimplemented_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, model)
 
     latent_rep_true = test_latents  # test for shape=10,50 & requires_grad=False
     

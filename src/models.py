@@ -21,7 +21,7 @@ import torch
 REG_FACTOR_INIT  = 1.0
 REG_FACTOR_FINAL = 100
 
-def original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size):    #, test_id, classifier):  # jacobian
+def original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier):  # jacobian
     # values take from "approximate_quality" in mnist.py
     reg_factor_scheduler = ExponentialScheduler(REG_FACTOR_INIT, x_final=REG_FACTOR_FINAL, n_epoch=n_epoch) # test for step_factor=1.000691014168259 ?
     simplex = Simplex(corpus_examples=corpus_inputs,
@@ -39,13 +39,13 @@ def original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_lat
     
     # test unit -> if sum of top x weihgt adds up to at least ~90? or some other value a well trained original would have
 
-    #input_baseline = torch.zeros(corpus_inputs.shape)
-    #jacobian = simplex.jacobian_projection(test_id=test_id, model=classifier, input_baseline=input_baseline)
+    input_baseline = torch.zeros(corpus_inputs.shape)
+    jacobian = simplex.jacobian_projection(test_id=test_id, model=classifier, input_baseline=input_baseline)
 
-    return latent_rep_approx, weights
+    return latent_rep_approx, weights, jacobian
 
 
-def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size):
+def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
     scheduler = ExponentialScheduler(x_init=0.1, x_final=REG_FACTOR_FINAL, n_epoch=n_epoch)
     reg_factor = REG_FACTOR_INIT
 
@@ -84,12 +84,12 @@ def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, 
     # for i in sort_id:
     #     corpus_decomposition.append((weights_1_sample[i], corpus_inputs[i]))
 
-    # jacobian = []
+    jacobian = []
 
-    return latent_rep_approx, weights_softmax
+    return latent_rep_approx, weights_softmax, jacobian
 
     
-def reimplemented_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size):
+def reimplemented_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
     size_test = test_latents.shape[0]
     size_corpus = corpus_inputs.shape[0]
     model = Simplex_Model(size_corpus, size_test)
@@ -110,9 +110,9 @@ def reimplemented_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, tes
     latent_rep_approx = model(corpus_latents)
 
     # jacobian does not work yet
-    # jacobian = []
+    jacobian = []
 
-    return latent_rep_approx, weights
+    return latent_rep_approx, weights, jacobian
 
 
 
