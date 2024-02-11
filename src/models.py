@@ -32,8 +32,8 @@ def original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_lat
                 n_epoch=n_epoch,
                 reg_factor=REG_FACTOR_INIT,
                 reg_factor_scheduler=reg_factor_scheduler)      # test for ?
-    #weights = simplex.weights   # test for shape=10,100 & requires_grad=False
-    
+    weights = simplex.weights   # test for shape=10,100 & requires_grad=False
+
     # see mnist.py approximation_quality
     latent_rep_approx = simplex.latent_approx()     # test for shape=10,50 & requires_grad=False
     
@@ -42,7 +42,7 @@ def original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_lat
     #input_baseline = torch.zeros(corpus_inputs.shape)
     #jacobian = simplex.jacobian_projection(test_id=test_id, model=classifier, input_baseline=input_baseline)
 
-    return latent_rep_approx
+    return latent_rep_approx, weights
 
 
 def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size):
@@ -86,7 +86,7 @@ def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, 
 
     # jacobian = []
 
-    return latent_rep_approx
+    return latent_rep_approx, weights_softmax
 
     
 def reimplemented_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size):
@@ -112,7 +112,7 @@ def reimplemented_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, tes
     # jacobian does not work yet
     # jacobian = []
 
-    return latent_rep_approx
+    return latent_rep_approx, weights
 
 
 
