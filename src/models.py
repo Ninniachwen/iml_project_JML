@@ -42,7 +42,7 @@ def original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_lat
     input_baseline = torch.zeros(corpus_inputs.shape)
     jacobian = simplex.jacobian_projection(test_id=test_id, model=classifier, input_baseline=input_baseline)
 
-    return latent_rep_approx, weights, jacobian
+    return latent_rep_approx.detach(), weights.detach(), jacobian
 
 
 def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
@@ -85,8 +85,8 @@ def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, 
     #     corpus_decomposition.append((weights_1_sample[i], corpus_inputs[i]))
 
     jacobian = []
-
-    return latent_rep_approx, weights_softmax, jacobian
+    #TODO: detach jacobians too?
+    return latent_rep_approx.detach(), weights_softmax.detach(), jacobian
 
     
 def reimplemented_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
@@ -112,7 +112,7 @@ def reimplemented_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, tes
     # jacobian does not work yet
     jacobian = []
 
-    return latent_rep_approx, weights, jacobian
+    return latent_rep_approx.detach(), weights.detach(), jacobian
 
 
 
