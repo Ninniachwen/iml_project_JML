@@ -1,28 +1,13 @@
 import enum
-import inspect
-import matplotlib.pyplot as plt
 import numpy as np
-import os
-import sklearn
-import sys
 import torch
-
-# access model in parent dir: https://stackoverflow.com/a/11158224/14934164
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)   
-#TODO: why mnist from 2 sources? 
-from Original_Code.src.simplexai.models.image_recognition import MnistClassifier
-from Original_Code.src.simplexai.experiments import mnist
 
 import evaluation as e
 import simplex_versions as s
 import classifier_versions as c
 
-#SAVE_PATH="../experiments/results/mnist/quality/" #Jasmin
-SAVE_PATH=os.path.join(parentdir, "files")
-RANDOM_SEED=42
 
+RANDOM_SEED=42
 
 class Model_Type(enum.Enum):
     ORIGINAL = 1
@@ -45,7 +30,7 @@ class Dataset(enum.Enum):
 # for this to work right now you have to follow the install instructions of the original repo
 
 
-def do_simplex(model_type, dataset, cv, n_epoch, decompostion_size, test_id):
+def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decompostion_size=100, test_id=0):
     """ #TODO: aktualisieren
     Decide if we want to train our Simplex model the original or the new implemented way
 
@@ -69,31 +54,36 @@ def do_simplex(model_type, dataset, cv, n_epoch, decompostion_size, test_id):
     torch.random.manual_seed(RANDOM_SEED + cv)
     torch.backends.cudnn.deterministic = True # https://www.typeerror.org/docs/pytorch/generated/torch.nn.conv1d
 
-    # must return classifier, corpus_data, corpus_latents, test_data, test_latents, 
+    # must return classifier, corpus_data, corpus_latents, corpus_target, test_data, test_targets, test_latents
     if dataset is Dataset.MNIST:
-        classifier, corpus, test_set = c.train_or_load_mnist(SAVE_PATH, RANDOM_SEED, cv)
+        classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv)
+        #TODO: maybe keep as triples and hand triples to models
         corpus_data, corpus_latents, corpus_target = corpus
         test_data, test_targets, test_latents = test_set
 
     # must return latent_rep_approx, weights, jacobian
     if model_type is Model_Type.ORIGINAL:
         print(f"Starting on cv {cv} with the original model!")
-        latent_rep_approx, weights, jacobian = s.original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
 
     if model_type is Model_Type.ORIGINAL_COMPACT:
         print(f"Starting on cv {cv} with the compact original model!")
-        latent_rep_approx, weights, jacobian = s.compact_original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
         
     if model_type is Model_Type.REIMPLEMENTED:
         print(f"Starting on cv {cv} with our own reimplemented model!")
-        latent_rep_approx, weights, jacobian = s.reimplemented_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
 
     latent_rep_true = test_latents  # test for shape=10,50 & requires_grad=False
     
     output_r2_score, latent_r2_score = e.r_2_scores(classifier, latent_rep_approx, latent_rep_true, weights, test_id, test_data, corpus_data)
     
+    #TODO: use latents instead of weights?
     decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decompostion_size, weights)
 
+    #TODO: how to print jacobians? (saliency is tensor shape[28,28,1])
+    most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
+    saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
     
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions
 
@@ -120,13 +110,13 @@ def do_mnist_experiment(cv=0):
   
     
     # original_model, original_score_latent, original_score_output, original_jacobian
-    original = do_simplex(Model_Type.ORIGINAL, Dataset.MNIST, cv, n_epoch, decompostion_size, test_id)
+    original = do_simplex(Model_Type.ORIGINAL, Dataset.MNIST, cv, decompostion_size, test_id)
 
     # reimplemented_model, reimplemented_score_latent, reimplemented_score_output, reimplemented_jacobian
-    meike = do_simplex(Model_Type.ORIGINAL_COMPACT, Dataset.MNIST, cv, n_epoch, decompostion_size, test_id)
+    #meike = do_simplex(Model_Type.ORIGINAL_COMPACT, Dataset.MNIST, cv, decompostion_size, test_id)
 
     #own_model, own_score_latent, own_score_output, own_jacobian
-    jasmin = do_simplex(Model_Type.REIMPLEMENTED, Dataset.MNIST, cv, n_epoch, decompostion_size, test_id)
+    #jasmin = do_simplex(Model_Type.REIMPLEMENTED, Dataset.MNIST, cv, decompostion_size, test_id)
 
     #print(original[1], original[2]) # for cv=1 : 0.9178502448017772 0.9458505321920692
     #print(meike[1], meike[2]) # for cv=1 : 0.9178502448017772 0.9458505321920692
@@ -138,6 +128,28 @@ def do_mnist_experiment(cv=0):
 
 
 def run_multiple_experiments():
+    
+    original_score_latents = []
+    original_score_outputs = []
+    own_score_latents = []
+    own_score_outputs = []
+    #for i in range(10):
+    for i in range(1):
+        original_score_latent, original_score_output, own_score_latent, own_score_output = do_mnist_experiment(i)
+        original_score_latents.append(original_score_latent)
+        original_score_outputs.append(original_score_output)
+        own_score_latents.append(own_score_latent)
+        own_score_outputs.append(own_score_output)
+    
+    print(f"Original score latents: {original_score_latents}; mean: {np.mean(original_score_latents)}")
+    print(f"Original score outputs: {original_score_outputs}; mean: {np.mean(original_score_outputs)}")
+    print(f"Own score latents: {own_score_latents}; mean: {np.mean(own_score_latents)}")
+    print(f"Own score outputs: {own_score_outputs}; mean: {np.mean(own_score_outputs)}")
+
+    # if shuffle=False in corpus- and test-loader, the original values get better (and more consistent)!
+
+def run_all_experiments(corpus_size, test_size, decomposition_size, ):
+    
     original_score_latents = []
     original_score_outputs = []
     own_score_latents = []

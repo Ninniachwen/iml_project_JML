@@ -1,5 +1,5 @@
 
-    #TODO: create test for decomposition
+#TODO: create test for decomposition
 
 from matplotlib import pyplot as plt
 import numpy as np
@@ -51,6 +51,7 @@ def create_decompositions(test_data, test_targets, corpus_data, corpus_targets, 
         decompostion = []
         for w_id in top_x_ids:
             decompostion.append({
+                "c_id":w_id,
                 "c_weight": sample_weights[w_id], 
                 "c_img": corpus_data[w_id].reshape([sample.shape[1], sample.shape[2]]), 
                 "c_target": corpus_targets[w_id].item()})

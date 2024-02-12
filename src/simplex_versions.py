@@ -1,4 +1,11 @@
+import inspect
+import os
+import sys
 
+# access model in parent dir: https://stackoverflow.com/a/11158224/14934164
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
 from Original_Code.src.simplexai.utils.schedulers import ExponentialScheduler
 from Original_Code.src.simplexai.explainers.simplex import Simplex
 
@@ -20,16 +27,18 @@ import torch
 
 REG_FACTOR_INIT  = 1.0
 REG_FACTOR_FINAL = 100
+EPOCHS_ORIGINAL = 20000
+EPOCHS_REIMPLEM = 1000 #TODO: 10000 or same as original?
 
-def original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier):  # jacobian
+def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier):  # jacobian
     # values take from "approximate_quality" in mnist.py
-    reg_factor_scheduler = ExponentialScheduler(REG_FACTOR_INIT, x_final=REG_FACTOR_FINAL, n_epoch=n_epoch) # test for step_factor=1.000691014168259 ?
+    reg_factor_scheduler = ExponentialScheduler(REG_FACTOR_INIT, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS_ORIGINAL) # test for step_factor=1.000691014168259 ?
     simplex = Simplex(corpus_examples=corpus_inputs,
             corpus_latent_reps=corpus_latents)    # test for corpus_size=100 & dim_latent=50
     simplex.fit(test_examples=test_inputs,
                 test_latent_reps=test_latents,
                 n_keep=decompostion_size,  # how many weights we want to keep in the end; keep all now to compare to own  model
-                n_epoch=n_epoch,
+                n_epoch=EPOCHS_ORIGINAL,
                 reg_factor=REG_FACTOR_INIT,
                 reg_factor_scheduler=reg_factor_scheduler)      # test for ?
     weights = simplex.weights   # test for shape=10,100 & requires_grad=False
@@ -45,14 +54,14 @@ def original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_lat
     return latent_rep_approx.detach(), weights.detach(), jacobian
 
 
-def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
-    scheduler = ExponentialScheduler(x_init=0.1, x_final=REG_FACTOR_FINAL, n_epoch=n_epoch)
+def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
+    scheduler = ExponentialScheduler(x_init=0.1, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS_ORIGINAL)
     reg_factor = REG_FACTOR_INIT
 
     #simplex.fit TODO: make less similar to original...
     W_0 = torch.zeros((test_latents.shape[0], corpus_inputs.shape[0]), requires_grad=True) #test shape=10,100 & req gradient
     optimizer = torch.optim.Adam([W_0])
-    for epoch in range(n_epoch):
+    for epoch in range(EPOCHS_ORIGINAL):
         #TODO: from simplex
         optimizer.zero_grad()
         weights = torch.nn.functional.softmax(W_0, dim=-1)      # test for shape=10,100 & requires_grad=False
@@ -63,9 +72,9 @@ def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, 
         loss = error + reg_factor * regulator
         loss.backward()
         optimizer.step()
-        if (epoch + 1) % (n_epoch / 5) == 0:
+        if (epoch + 1) % (EPOCHS_ORIGINAL / 5) == 0:
             print(
-                f"Weight Fitting Epoch: {epoch+1}/{n_epoch} ; Error: {error.item():.3g} ;"
+                f"Weight Fitting Epoch: {epoch+1}/{EPOCHS_ORIGINAL} ; Error: {error.item():.3g} ;"
                 f" Regulator: {regulator.item():.3g} ; Reg Factor: {reg_factor:.3g}"
             )
         reg_factor = scheduler.step(reg_factor)
@@ -89,13 +98,13 @@ def compact_original_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, 
     return latent_rep_approx.detach(), weights_softmax.detach(), jacobian
 
     
-def reimplemented_model(n_epoch, corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
+def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
     size_test = test_latents.shape[0]
     size_corpus = corpus_inputs.shape[0]
     model = Simplex_Model(size_corpus, size_test)
     optimizer = torch.optim.Adam(model.parameters(), weight_decay=0.0001, lr=0.001) # same optimizer as original #TODO: original uses no weight decay, learning rate is the same, because default
     # play with parameters to not overfit model
-    for epoch in range(1000):
+    for epoch in range(EPOCHS_REIMPLEM):
         optimizer.zero_grad()
         prediction = model(corpus_latents)
         loss = ((prediction - test_latents)** 2).sum() # same as original

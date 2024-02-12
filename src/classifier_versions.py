@@ -13,19 +13,23 @@ from Original_Code.src.simplexai.models.image_recognition import MnistClassifier
 from Original_Code.src.simplexai.experiments import mnist
 
 
-def train_or_load_mnist(save_path, random_seed, cv):
+#SAVE_PATH="../experiments/results/mnist/quality/" #Jasmin
+SAVE_PATH=os.path.join(parentdir, "files")
+
+
+def train_or_load_mnist(random_seed, cv):
     # the following are standard values which are used in mnist.py to train mnistClassifier
-    if not os.path.isfile(os.path.join(save_path,f"model_cv{cv}.pth")):
+    if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")):
         mnist.train_model(
                 device="cpu",
                 random_seed=random_seed,
                 cv=cv,
-                save_path=save_path,
+                save_path=SAVE_PATH,
                 model_reg_factor=0.1,
             )
         
     classifier = MnistClassifier()
-    classifier.load_state_dict(torch.load(os.path.join(save_path,f"model_cv{cv}.pth")))
+    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")))
     # model.to(device) porbably not necessary
     classifier.eval()
 
