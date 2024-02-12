@@ -37,18 +37,16 @@ def load_data(path):
     x = scaler.fit_transform(x)
     return x,y.values
 
-def train_model(model, x_train, y_train, x_test, y_test, x_val, y_val, device,epochs, lr=0.001):
+def train_model(model, x_train, y_train, x_test, y_test, device,epochs, lr=0.001):
 
     optimizer = torch.optim.Adam(params=model.parameters(),lr=lr)
 
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=25, gamma=0.1)
+    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, step_size=25, gamma=0.1)
 
     train_data = HeartFailureDataset(x_train,y_train)
-    val_data = HeartFailureDataset(x_val,y_val)
     test_data = HeartFailureDataset(x_test,y_test)
     
     train_loader = DataLoader(train_data, batch_size=50, shuffle=False)
-    val_loader = DataLoader(val_data, batch_size=50, shuffle=False)
     test_loader = DataLoader(test_data, batch_size=50, shuffle=False)
     lossF = torch.nn.BCELoss()
 
@@ -65,7 +63,7 @@ def train_model(model, x_train, y_train, x_test, y_test, x_val, y_val, device,ep
             train_loss += loss
             loss.backward()
             optimizer.step()
-        train_loss/=train_loss/len(train_loader)
+        train_loss/=len(train_loader)
         if epoch % 10 == 0:
             print(f"Trainloss: {train_loss}")
 
@@ -90,21 +88,20 @@ def train_model(model, x_train, y_train, x_test, y_test, x_val, y_val, device,ep
         test()        
         #scheduler.step()
     test() 
-    torch.save(model.state_dict(), "heart_failure_1.pth")
+    torch.save(model.state_dict(), "./results/models/heart_failure_1.pth")
 
 
 def main():
     datapath = "./data/heart.csv"
     x,y = load_data(datapath)
     x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.1,random_state=42,shuffle=False)
-    x_train, x_val, y_train, y_val = train_test_split(x_train,y_train,test_size=0.1,random_state=42,shuffle=False)
     model = HeartFailureClassifier()
-    epochs=50
+    epochs=40
     if torch.cuda.is_available():
         device=torch.device("cuda")
     else:
         device = torch.device("cpu")
-    train_model(model, x_train=x_train,y_train=y_train,x_test=x_test,y_test=y_test,x_val=x_val,y_val=y_val,epochs=epochs, device=device)
+    train_model(model, x_train=x_train,y_train=y_train,x_test=x_test,y_test=y_test,epochs=epochs, device=device)
     
 
 
