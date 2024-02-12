@@ -16,7 +16,8 @@ from Original_Code.src.simplexai.models.image_recognition import MnistClassifier
 from Original_Code.src.simplexai.experiments import mnist
 
 import evaluation as e
-import models as m
+import simplex_versions as s
+import classifier_versions as c
 
 #SAVE_PATH="../experiments/results/mnist/quality/" #Jasmin
 SAVE_PATH=os.path.join(parentdir, "files")
@@ -70,46 +71,22 @@ def do_simplex(model_type, dataset, cv, n_epoch, decompostion_size, test_id):
 
     # must return classifier, corpus_data, corpus_latents, test_data, test_latents, 
     if dataset is Dataset.MNIST:
-        # the following are standard values which are used in mnist.py to train mnistClassifier
-        if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")):
-            mnist.train_model(
-                    device="cpu",
-                    random_seed=RANDOM_SEED,
-                    cv=cv,
-                    save_path=SAVE_PATH,
-                    model_reg_factor=0.1,
-                )
-            
-        
-        classifier = MnistClassifier()
-        classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")))
-        # model.to(device) porbably not necessary
-        classifier.eval()
-
-        # data loader from approximate_quality
-        corpus_loader = mnist.load_mnist(100, train=True, shuffle=False)
-        test_loader = mnist.load_mnist(10, train=False, shuffle=False)
-        batch_id_test , (test_data, test_targets) = next(enumerate(test_loader))
-        test_data = test_data.detach()
-        test_latents = classifier.latent_representation(test_data).detach()
-        batch_id_corpus, (corpus_data, corpus_target) = next(enumerate(corpus_loader))
-        corpus_data = corpus_data.detach()
-        corpus_latents = classifier.latent_representation(corpus_data).detach()
-        #TODO: maybe implement own mnist latents fuction?
-        #TODO: which detach is truely necessary?
+        classifier, corpus, test_set = c.train_or_load_mnist(SAVE_PATH, RANDOM_SEED, cv)
+        corpus_data, corpus_latents, corpus_target = corpus
+        test_data, test_targets, test_latents = test_set
 
     # must return latent_rep_approx, weights, jacobian
     if model_type is Model_Type.ORIGINAL:
         print(f"Starting on cv {cv} with the original model!")
-        latent_rep_approx, weights, jacobian = m.original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
 
     if model_type is Model_Type.ORIGINAL_COMPACT:
         print(f"Starting on cv {cv} with the compact original model!")
-        latent_rep_approx, weights, jacobian = m.compact_original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.compact_original_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
         
     if model_type is Model_Type.REIMPLEMENTED:
         print(f"Starting on cv {cv} with our own reimplemented model!")
-        latent_rep_approx, weights, jacobian = m.reimplemented_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(n_epoch, corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
 
     latent_rep_true = test_latents  # test for shape=10,50 & requires_grad=False
     
