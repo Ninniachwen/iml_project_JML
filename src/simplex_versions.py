@@ -28,7 +28,7 @@ import torch
 REG_FACTOR_INIT  = 1.0
 REG_FACTOR_FINAL = 100
 EPOCHS_ORIGINAL = 20000
-EPOCHS_REIMPLEM = 20000 #TODO: 10000 or same as original?
+EPOCHS_REIMPLEM = 1000 #TODO: 10000 or same as original?
 
 def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier):  # jacobian
     # values take from "approximate_quality" in mnist.py
@@ -101,28 +101,25 @@ def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_late
 def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model):
     size_test = test_latents.shape[0]
     size_corpus = corpus_inputs.shape[0]
-    simplex = Simplex_Model(size_corpus, size_test)
-    optimizer = torch.optim.Adam([simplex.weight]) # same optimizer as original
+    model = Simplex_Model(size_corpus, size_test)
+    optimizer = torch.optim.Adam(model.parameters(), weight_decay=0.0001, lr=0.001) # same optimizer as original #TODO: original uses no weight decay, learning rate is the same, because default
+    # play with parameters to not overfit model
     for epoch in range(EPOCHS_REIMPLEM):
         optimizer.zero_grad()
-        prediction = simplex(corpus_latents)
+        prediction = model(corpus_latents)
         loss = ((prediction - test_latents)** 2).sum() # same as original
         loss.backward()
         optimizer.step()
-        # printing like in original
-        if (epoch + 1) % (EPOCHS_ORIGINAL / 5) == 0:
-            print(
-                f"Weight Fitting Epoch: {epoch+1}/{EPOCHS_ORIGINAL} ; Error: {loss:.3g} ;"
-            )
         
+        #print(loss)
+    weights = model.layer1.weight # shape: 10,100,1 (size_test,size_corpus,1)
+    weights = weights.reshape([size_test,size_corpus])
+    weights = torch.nn.functional.softmax(weights, dim=1)
 
-    weights = torch.nn.functional.softmax(simplex.weight, dim=1)
+    latent_rep_approx = model(corpus_latents)
 
-    latent_rep_approx = simplex(corpus_latents)
-
-    input_baseline = torch.zeros(corpus_inputs.shape)  # also as global parameter? 
-
-    jacobian = simplex.get_jacobian(test_id, corpus_inputs, test_latents, input_baseline, model)
+    # jacobian does not work yet
+    jacobian = []
 
     return latent_rep_approx.detach(), weights.detach(), jacobian
 
@@ -133,34 +130,8 @@ class Simplex_Model(torch.nn.Module):
     # in original code, they cut down the inputs to only keep the most important corpus examples ("n_keep") -> lets ignore that for now
     def __init__(self, size_corpus, size_test):
         super().__init__()
-        self.weight = torch.zeros(size_test, size_corpus, requires_grad=True)
-        # use basically a layer like torch.nn.Linear(size_corpus, size_test, bias=False)
-
-    def forward(self, x, softmax=True):
-        if softmax:
-            weight = torch.nn.functional.softmax(self.weight,dim=1)
-        else:  
-            # with this (using the weights without softmax), the model seems to overfit - 
-            # the r2 values are better, but the weights are very close together
-            weight = self.weight
-        x = torch.matmul(weight, x)
+        self.layer1 = torch.nn.Conv1d(in_channels=size_corpus, out_channels=size_test,kernel_size=1, bias=False)
+        self.layer1.weight.data.fill_(0) # initialize weights with 0s
+    def forward(self, x):
+        x = self.layer1(x)
         return x
-    
-    def get_jacobian(self, test_id, corpus_inputs, test_latents, input_baseline, classifier):
-        # test_id: für welches test example die projections berechnet werden sollen
-        latent_baseline = classifier.latent_representation(input_baseline)
-        n_bins = 100 # standard in original
-        # test_shift and test_shift_sqr like in simplex.py from original
-        test_shift = test_latents[test_id] - latent_baseline
-        test_shift_sqr = torch.sum(test_shift**2, dim=-1, keepdim=True)
-        # the following is adapted from the integrated gradient exercise
-        alphas = torch.linspace(0, 1, n_bins)
-        all_gradients = 0
-        for a in alphas:
-            x_alpha = input_baseline + a * (corpus_inputs - input_baseline)
-            x_alpha.requires_grad = True
-            output = classifier.latent_representation(x_alpha)
-            output.backward(test_shift/test_shift_sqr)
-            all_gradients += x_alpha.grad
-        jacobian = (corpus_inputs - input_baseline) * (all_gradients / n_bins)
-        return jacobian
