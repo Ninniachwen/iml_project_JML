@@ -1,3 +1,4 @@
+from captum.attr._utils.visualization import visualize_image_attr
 import enum
 import numpy as np
 import torch
@@ -30,7 +31,7 @@ class Dataset(enum.Enum):
 # for this to work right now you have to follow the install instructions of the original repo
 
 
-def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decompostion_size=100, test_id=0):
+def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decompostion_size=100, test_id=0, print_jacobians=False):
     """ #TODO: aktualisieren
     Decide if we want to train our Simplex model the original or the new implemented way
 
@@ -82,8 +83,27 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decompostion_size, weights)
 
     #TODO: how to print jacobians? (saliency is tensor shape[28,28,1])
-    most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
-    saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
+    if print_jacobians:
+
+            #most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
+        #saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
+
+        # [Jasmin:] The following works for printing the jacobians. We may want to print them 
+        # in a different file / with some global parameters / using the decomposition
+        most_important_example = weights[test_id].argmax()
+        image = corpus_data[most_important_example].numpy().transpose((1, 2, 0))  # transpose see use_case.py
+        saliency = jacobian[most_important_example].numpy().transpose((1, 2, 0))  # transpose see use_case.py
+        # the following code, see use_case.py
+        fig3, axis = visualize_image_attr(
+                saliency,
+                image,
+                method="blended_heat_map",
+                sign="all",
+                title="Jacobian of most important corpus example",
+                use_pyplot=True,
+            )
+        most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
+        saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
     
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions
 
