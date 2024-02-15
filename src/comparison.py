@@ -1,7 +1,6 @@
 import enum
 import numpy as np
 import torch
-from captum.attr._utils.visualization import visualize_image_attr
 
 import evaluation as e
 import simplex_versions as s
@@ -83,23 +82,8 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decompostion_size, weights)
 
     #TODO: how to print jacobians? (saliency is tensor shape[28,28,1])
-    #most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
-    #saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
-
-    # [Jasmin:] The following works for printing the jacobians. We may want to print them 
-    # in a different file / with some global parameters / using the decomposition
-    most_important_example = weights[test_id].argmax()
-    image = corpus_data[most_important_example].numpy().transpose((1, 2, 0))  # transpose see use_case.py
-    saliency = jacobian[most_important_example].numpy().transpose((1, 2, 0))  # transpose see use_case.py
-    # the following code, see use_case.py
-    fig3, axis = visualize_image_attr(
-            saliency,
-            image,
-            method="blended_heat_map",
-            sign="all",
-            title="Jacobian of most important corpus example",
-            use_pyplot=True,
-        )
+    most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
+    saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
     
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions
 
@@ -132,11 +116,11 @@ def do_mnist_experiment(cv=0):
     #meike = do_simplex(Model_Type.ORIGINAL_COMPACT, Dataset.MNIST, cv, decompostion_size, test_id)
 
     #own_model, own_score_latent, own_score_output, own_jacobian
-    jasmin = do_simplex(Model_Type.REIMPLEMENTED, Dataset.MNIST, cv, decompostion_size, test_id)
+    #jasmin = do_simplex(Model_Type.REIMPLEMENTED, Dataset.MNIST, cv, decompostion_size, test_id)
 
-    print(original[1], original[2]) # for cv=1 : 0.9178502448017772 0.9458505321920692
+    #print(original[1], original[2]) # for cv=1 : 0.9178502448017772 0.9458505321920692
     #print(meike[1], meike[2]) # for cv=1 : 0.9178502448017772 0.9458505321920692
-    print(jasmin[1], jasmin[2]) # for cv=1 :0.9999924820980085 0.999999255618875
+    #print(jasmin[1], jasmin[2]) # for cv=1 :0.9999924820980085 0.999999255618875
 
     return 
 
