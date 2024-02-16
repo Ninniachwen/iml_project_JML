@@ -234,50 +234,50 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
             
         for d in Dataset:
             file_path_r2 = os.path.join(parentdir, "files" , "r2_experiment.csv")
-            with open(file_path_r2, mode) as f1:
-                for m in Model_Type:
-                    weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
-                        model_type=m, 
-                        dataset=d, 
-                        cv=cv,
-                        corpus_size=corpus_size, 
-                        test_size=test_size, 
-                        decompostion_size=decomposition_size, 
-                        test_id=test_id)
-                    
-                    weights_all.append(weights)
-                    latent_r2_scores.append(latent_r2_score)
-                    output_r2_scores.append(output_r2_score)
-                    jacobians.append(jacobian)
-                    decompostions.append(decompostion)
+            #with open(file_path_r2, mode) as f1:   #write original experimetns resuts in extra file?
+            for m in Model_Type:
+                weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
+                    model_type=m, 
+                    dataset=d, 
+                    cv=cv,
+                    corpus_size=corpus_size, 
+                    test_size=test_size, 
+                    decompostion_size=decomposition_size, 
+                    test_id=test_id)
+                
+                weights_all.append(weights)
+                latent_r2_scores.append(latent_r2_score)
+                output_r2_scores.append(output_r2_score)
+                jacobians.append(jacobian)
+                decompostions.append(decompostion)
 
-                    dec_c = decompostion[test_id]["decomposition"]
-                    corpus_ids = [dec_c[i]["c_id"] for i in range(decomposition_size)]
-                    corpus_weights = [dec_c[i]["c_weight"] for i in range(decomposition_size)]
-                    corpus_targest = [dec_c[i]["c_target"] for i in range(decomposition_size)]
+                dec_c = decompostion[test_id]["decomposition"]
+                corpus_ids = [dec_c[i]["c_id"] for i in range(decomposition_size)]
+                corpus_weights = [dec_c[i]["c_weight"] for i in range(decomposition_size)]
+                corpus_targest = [dec_c[i]["c_target"] for i in range(decomposition_size)]
 
-                    writer.writerow([
-                        running_int, 
-                        corpus_size, 
-                        test_size, 
-                        decomposition_size, 
-                        cv,
-                        m.name, 
-                        d.name,
-                        latent_r2_score,
-                        output_r2_score,
-                        decompostion[test_id]["sample_id"],
-                        decompostion[test_id]["target"],
-                        decompostion[test_id]["decomposition"][0]["c_id"],
-                        decompostion[test_id]["decomposition"][0]["c_weight"],
-                        decompostion[test_id]["decomposition"][0]["c_target"],
-                        corpus_ids,
-                        corpus_weights,
-                        corpus_targest,
-                        #TODO: generate image of decomposition, store & link
-                        ])
-                    #writer.writerow([
-                    running_int += 1
+                writer.writerow([
+                    running_int, 
+                    corpus_size, 
+                    test_size, 
+                    decomposition_size, 
+                    cv,
+                    m.name, 
+                    d.name,
+                    latent_r2_score,
+                    output_r2_score,
+                    decompostion[test_id]["sample_id"],
+                    decompostion[test_id]["target"],
+                    decompostion[test_id]["decomposition"][0]["c_id"],
+                    decompostion[test_id]["decomposition"][0]["c_weight"],
+                    decompostion[test_id]["decomposition"][0]["c_target"],
+                    corpus_ids,
+                    corpus_weights,
+                    corpus_targest,
+                    #TODO: generate image of decomposition, store & link
+                    ])
+                #writer.writerow([
+                running_int += 1
 
     return weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions
 
