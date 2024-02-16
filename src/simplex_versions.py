@@ -114,11 +114,19 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
             print(
                 f"Weight Fitting Epoch: {epoch+1}/{EPOCHS_ORIGINAL} ; Error: {loss:.3g} ;"
             )
-        
+    
 
     weights = torch.nn.functional.softmax(simplex.weight, dim=1)
 
-    latent_rep_approx = simplex(corpus_latents)
+    # manually set the weights which should not be in the composition to 0
+    weight_id_irrelevant = weights.argsort()[:,:(size_corpus - decompostion_size)]
+    for i in range(size_test):
+        for id in weight_id_irrelevant[i]:
+            weights[i][id] = 0
+    simplex.weight = weights
+
+    # dont't use softmax after setting weights to 0 so the importance of weights is still the same
+    latent_rep_approx = simplex(corpus_latents, softmax=False) 
 
     input_baseline = torch.zeros(corpus_inputs.shape)  # also as global parameter? 
 
@@ -130,7 +138,8 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
 
 class Simplex_Model(torch.nn.Module): #reimplemented
     # idea: do the training done in "fit"-Function of "simplex.py" in an more intuitive way
-    # in original code, they cut down the inputs to only keep the most important corpus examples ("n_keep") -> lets ignore that for now
+    # in original code, they cut down the inputs to only keep the most important corpus examples ("n_keep")while training
+    # here, we train as normal and later set the not important weights to 0
     def __init__(self, size_corpus, size_test):
         super().__init__()
         self.weight = torch.zeros(size_test, size_corpus, requires_grad=True)
@@ -140,7 +149,7 @@ class Simplex_Model(torch.nn.Module): #reimplemented
         if softmax:
             weight = torch.nn.functional.softmax(self.weight,dim=1)
         else:  
-            # with this (using the weights without softmax), the model seems to overfit - 
+            # with this (using the weights without softmax) during training, the model seems to overfit - 
             # the r2 values are better, but the weights are very close together
             weight = self.weight
         x = torch.matmul(weight, x)

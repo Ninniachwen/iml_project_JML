@@ -41,7 +41,7 @@ class Dataset(enum.Enum):
 # for this to work right now you have to follow the install instructions of the original repo
 
 
-def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decompostion_size=100, test_id=0, print_jacobians=False, r_2_tests=True, decomposition_tests=True):
+def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decompostion_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_tests=True, decomposition_tests=True):
     """ #TODO: aktualisieren
     Decide if we want to train our Simplex model the original or the new implemented way
 
@@ -67,7 +67,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
 
     # must return classifier, corpus_data, corpus_latents, corpus_target, test_data, test_targets, test_latents
     if dataset is Dataset.MNIST:
-        classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv)
+        classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size)
         #TODO: maybe keep as triples and hand triples to models
         corpus_data, corpus_latents, corpus_target = corpus
         test_data, test_targets, test_latents = test_set
@@ -81,11 +81,11 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         print(f"Starting on cv {cv} with the original model!")
         latent_rep_approx, weights, jacobian = s.original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
 
-    if model_type is Model_Type.ORIGINAL_COMPACT:
+    elif model_type is Model_Type.ORIGINAL_COMPACT:
         print(f"Starting on cv {cv} with the compact original model!")
         latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
         
-    if model_type is Model_Type.REIMPLEMENTED:
+    elif model_type is Model_Type.REIMPLEMENTED:
         print(f"Starting on cv {cv} with our own reimplemented model!")
         latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
     
@@ -257,7 +257,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                 corpus_targest = [dec_c[i]["c_target"] for i in range(decomposition_size)]
 
                 writer.writerow([
-                    running_int, 
+                    test_id, 
                     corpus_size, 
                     test_size, 
                     decomposition_size, 
@@ -287,10 +287,21 @@ if __name__ == "__main__":
     # training mnist, from minst.py
     #run_multiple_experiments()
     #do_mnist_experiment()
+    # weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
+    #     model_type=Model_Type.REIMPLEMENTED, 
+    #     dataset=Dataset.MNIST, 
+    #     cv=0,
+    #     corpus_size=100, 
+    #     test_size=10, 
+    #     decompostion_size=3, 
+    #     test_id=0, print_jacobians=True)
+    # print(latent_r2_score)
 
     #TODO: paper experiment: corpus_size = 1000; decomposition_size = test_size = 3-50
 
-    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=10)
+    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=100)
+    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=50)
+    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3)
     print("Done")
     #TODO: join test_set into corpus and see what happens
    

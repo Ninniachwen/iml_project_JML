@@ -40,7 +40,6 @@ def r_2_scores(classifier, latent_rep_approx, latent_rep_true, weights, test_id,
 
 
 def create_decompositions(test_data, test_targets, corpus_data, corpus_targets, decompostion_size, weights):
-    decompostion_size = 5
 
     full_decomposition = []
     for s_id, sample, target in zip(range(len(test_data)), test_data, test_targets):
