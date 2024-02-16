@@ -128,7 +128,7 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
 
 
 
-class Simplex_Model(torch.nn.Module):
+class Simplex_Model(torch.nn.Module): #reimplemented
     # idea: do the training done in "fit"-Function of "simplex.py" in an more intuitive way
     # in original code, they cut down the inputs to only keep the most important corpus examples ("n_keep") -> lets ignore that for now
     def __init__(self, size_corpus, size_test):
