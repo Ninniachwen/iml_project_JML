@@ -15,7 +15,6 @@ from Original_Code.src.simplexai.models.image_recognition import MnistClassifier
 from Original_Code.src.simplexai.experiments import mnist
 
 
-#SAVE_PATH="../experiments/results/mnist/quality/" #Jasmin
 SAVE_PATH=os.path.join(parentdir, "files")
 
 
@@ -48,3 +47,7 @@ def train_or_load_mnist(random_seed, cv, corpus_size=100, test_size=10, ):
     #TODO: which detach is truely necessary?
     
     return classifier, (corpus_data, corpus_latents, corpus_target), (test_data, test_targets, test_latents)
+
+
+def train_or_load_new_dataset_model():
+    print("TODO: Lucas")

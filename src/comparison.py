@@ -9,6 +9,8 @@ import os
 import torch
 import sys
 
+#TODO: check if requirements file is sufficient
+
 
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -144,66 +146,6 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions
 
-#  auswertungen:
-# 1. r2 repr (jasmin)
-# 2. welche bilder sind die top x erklärungen, zahl, id, weights
-# doch nicht: # 2. r2 score zahl (jasmin)
-
-
-def do_mnist_experiment(cv=0):
-    # settings use_case:
-    # scheduler:
-    reg_factor_init=1.0; reg_factor_final=1000; n_epoch=20000  #epochs for simplex (epochs for mnist=10)
-    decompostion_size=100; test_id=0
-
-    # settings toy_example:
-    # scheduler:
-    # reg_factor_init=0; x_final=100; n_epoch=20000
-    # n_keep=decompostion_size=5; test_id=22
-
-    # settings Yasmin:
-    # reg_factor_init=0.1; x_final=100; n_epoch=10000
-    # n_keep=decompostion_size=100; test_id=0
-  
-    
-    # original_model, original_score_latent, original_score_output, original_jacobian
-    original = do_simplex(Model_Type.ORIGINAL, Dataset.MNIST, cv, decompostion_size, test_id)
-
-    # reimplemented_model, reimplemented_score_latent, reimplemented_score_output, reimplemented_jacobian
-    #meike = do_simplex(Model_Type.ORIGINAL_COMPACT, Dataset.MNIST, cv, decompostion_size, test_id)
-
-    #own_model, own_score_latent, own_score_output, own_jacobian
-    #jasmin = do_simplex(Model_Type.REIMPLEMENTED, Dataset.MNIST, cv, decompostion_size, test_id)
-
-    #print(original[1], original[2]) # for cv=1 : 0.9178502448017772 0.9458505321920692
-    #print(meike[1], meike[2]) # for cv=1 : 0.9178502448017772 0.9458505321920692
-    #print(jasmin[1], jasmin[2]) # for cv=1 :0.9999924820980085 0.999999255618875
-
-    return 
-
-    # the original model seems to get worse the more times i run it ....
-
-
-def run_multiple_experiments():
-    
-    original_score_latents = []
-    original_score_outputs = []
-    own_score_latents = []
-    own_score_outputs = []
-    #for i in range(10):
-    for i in range(1):
-        original_score_latent, original_score_output, own_score_latent, own_score_output = do_mnist_experiment(i)
-        original_score_latents.append(original_score_latent)
-        original_score_outputs.append(original_score_output)
-        own_score_latents.append(own_score_latent)
-        own_score_outputs.append(own_score_output)
-    
-    print(f"Original score latents: {original_score_latents}; mean: {np.mean(original_score_latents)}")
-    print(f"Original score outputs: {original_score_outputs}; mean: {np.mean(original_score_outputs)}")
-    print(f"Own score latents: {own_score_latents}; mean: {np.mean(own_score_latents)}")
-    print(f"Own score outputs: {own_score_outputs}; mean: {np.mean(own_score_outputs)}")
-
-    # if shuffle=False in corpus- and test-loader, the original values get better (and more consistent)!
 
 def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, ablation=False): 
     #TODO: remove duplicate name test_id. (ok in csv, should be called different in rest of code (this function and others). (sample_id?))
@@ -225,12 +167,11 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
     mode = "a" if file.is_file() else "w"   # append if file exists, assuming either both files exist, or none
     with open(file_path, mode) as f1:
     
-    
         writer=csv.writer(f1, delimiter=";",lineterminator="\n",)
 
         if mode == "w":     # add header if file new
             writer.writerow([
-                        "test_id",
+                        "experiment_id",
                         "corpus_size",
                         "test_size",
                         "decomposition_size",
@@ -251,8 +192,8 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         ])
             
         for d in Dataset:
-            file_path_r2 = os.path.join(parentdir, "files" , "r2_experiment.csv")
-            #with open(file_path_r2, mode) as f1:   #write original experimetns resuts in extra file?
+            # file_path_r2 = os.path.join(parentdir, "files" , "r2_experiment.csv")
+            # with open(file_path_r2, mode) as f1:   #write original experimetns resuts in extra file?
             for m in Model_Type:
                 weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
                     model_type=m, 
@@ -300,7 +241,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
     return weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions
 
 def run_ablation():
-    # test different combinations
+    # test different combinations (360 diff combinations)
     corpus_size = [50, 100]
     test_size = [5, 10]
     decomposition_size = [3, 5, 10, 50, 100]
@@ -320,6 +261,9 @@ def run_ablation():
                         run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, ablation=True)
 
 
+def run_original_experiment():
+    print("TODO") #TODO: code this (like in original simplex)
+
 if __name__ == "__main__":
 
     # training mnist, from minst.py
@@ -337,8 +281,8 @@ if __name__ == "__main__":
 
     #TODO: paper experiment: corpus_size = 1000; decomposition_size = test_size = 3-50
 
-    #run_all_experiments(corpus_size=100, test_size=10, decomposition_size=100)
-    run_ablation()
+    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=100)
+    #run_ablation()
 
     print("Done")
     #TODO: join test_set into corpus and see what happens

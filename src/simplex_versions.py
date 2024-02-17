@@ -25,7 +25,7 @@ import torch
     # reg_factor_init=0.1; x_final=100; n_epoch=10000
     # n_keep=decompostion_size=100; test_id=0
 
-REG_FACTOR_INIT  = 1.0
+REG_FACTOR_INIT  = 1.0  #TODO: compare?
 REG_FACTOR_FINAL = 100
 EPOCHS = 20000
 

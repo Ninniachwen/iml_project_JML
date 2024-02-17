@@ -42,6 +42,27 @@ class TestAll(unittest.TestCase):
         
     def test_jacobians():
         print("test")
+        # test original jacobian method against ours
+
+    def test_simplex_versions_decomposition():
+        print("test")
+        # decomposition needs to add up to ~100% 
+
+    # check return shapes of do simplex
+        
+    # check if most imp img is same for all models
+        
+    # check if both loaders return same format
+        
+    # descending order of corpus importance in decomposition (evaluation.py decompose)
+        
+    # check if same order of decomposition-id
+
+    # edge cases für input var (testset > corpus)
+
+    # exceptions
+        
+    # maybe test class-distr of classification against class-distr of decomposition
 
 if __name__ == "__main__":
     test = TestAll()
