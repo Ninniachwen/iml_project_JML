@@ -24,9 +24,9 @@ class Model_Type(enum.Enum):
     ORIGINAL = 1
     ORIGINAL_COMPACT = 2
     REIMPLEMENTED = 3
-    #R_NO_SOFTMAX = 4
-    #O_C_NO_SOFTMAX = 5
-    #O_C_NO_REGULIZATION = 6
+    R_NO_SOFTMAX = 4
+    O_C_NO_SOFTMAX = 5
+    O_C_NO_REGULIZATION = 6
 
 
 class Dataset(enum.Enum):
@@ -84,11 +84,24 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     elif model_type is Model_Type.ORIGINAL_COMPACT:
         print(f"Starting on cv {cv} with the compact original model!")
         latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+    
+    elif model_type is Model_Type.O_C_NO_SOFTMAX:
+        print(f"Starting on cv {cv} with the compact original model but without using softmax layer while training!")
+        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier, softmax=False)
+        
+    elif model_type is Model_Type.O_C_NO_REGULIZATION:
+        print(f"Starting on cv {cv} with the compact original model but without using regularization while training!")
+        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier, regularisation=False)
         
     elif model_type is Model_Type.REIMPLEMENTED:
         print(f"Starting on cv {cv} with our own reimplemented model!")
         latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
     
+    elif model_type is Model_Type.R_NO_SOFTMAX:
+        print(f"Starting on cv {cv} with our own reimplemented model but without using softmax layer while training!")
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier, softmax=False)
+    
+
     else:
         raise Exception(f"'{model_type}' is no valid input for model_type")
         #TODO: test for this exception
@@ -190,7 +203,7 @@ def run_multiple_experiments():
 
     # if shuffle=False in corpus- and test-loader, the original values get better (and more consistent)!
 
-def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0): 
+def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, ablation=False): 
     #TODO: remove duplicate name test_id. (ok in csv, should be called different in rest of code (this function and others). (sample_id?))
 
     print(f"   starting test runs with parameters:\n   corpus_size: {corpus_size}, test_size: {test_size}, decomposition_size: {decomposition_size}, cv: {cv}, test_id: {test_id}")
@@ -202,7 +215,10 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
     decompostions = []
     
     running_int = 0
-    file_path = os.path.join(parentdir, "files" , "comparison_results.csv")
+    if ablation:
+        file_path = os.path.join(parentdir, "files" , "ablation_results.csv")
+    else:
+        file_path = os.path.join(parentdir, "files" , "comparison_results.csv")
     file = Path(file_path)
     mode = "a" if file.is_file() else "w"   # append if file exists, assuming either both files exist, or none
     with open(file_path, mode) as f1:
@@ -281,6 +297,26 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
 
     return weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions
 
+def run_ablation():
+    # test different combinations
+    corpus_size = [50, 100]
+    test_size = [5, 10]
+    decomposition_size = [3, 5, 10, 50, 100]
+    cv = [0,1,2]
+    test_id = [0] # only relevant for jacobians
+    for c in corpus_size:
+        for t in test_size:
+            if t > c:
+                continue
+            for d in decomposition_size:
+                if d > c:
+                    continue
+                for v in cv:
+                    for id in test_id:
+                        if id > (d-1):
+                            pass
+                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, ablation=True)
+
 
 if __name__ == "__main__":
 
@@ -299,9 +335,9 @@ if __name__ == "__main__":
 
     #TODO: paper experiment: corpus_size = 1000; decomposition_size = test_size = 3-50
 
-    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=100)
-    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=50)
-    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3)
+    #run_all_experiments(corpus_size=100, test_size=10, decomposition_size=100)
+    run_ablation()
+
     print("Done")
     #TODO: join test_set into corpus and see what happens
    
