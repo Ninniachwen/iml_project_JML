@@ -3,6 +3,8 @@ from torch.utils.data import Dataset
 from PIL import Image
 from torchvision.transforms import v2
 
+LABEL ={"cats" : 0, "dogs" : 1}
+
 transform_normal = v2.Compose([   
     v2.ToImage(),
     v2.Resize((150, 150)),

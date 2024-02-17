@@ -6,10 +6,8 @@ import matplotlib.pyplot as plt
 
 from src.models.CatsAndDogsModel import CatsandDogsClassifier
 from src.utils.image_finder_cats_and_dogs import get_images
-from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate
+from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate, LABEL
 
-
-LABEL ={"cats" : 0, "dogs" : 1}
 
 
 def train_model(

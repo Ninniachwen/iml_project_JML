@@ -7,10 +7,10 @@ from src.simplex_versions import reimplemented_model
 from src.utils.image_finder_cats_and_dogs import get_images
 from src.utils.corpus_creator import make_corpus
 from src.models.CatsAndDogsModel import CatsandDogsClassifier
-from src.datasets.cats_and_dogs_dataset import CandDDataSet
+from src.datasets.cats_and_dogs_dataset import CandDDataSet, LABEL
 from src.visualization.images import plot_corpus_decomposition, plot_corpus_decomposition_with_jacobian
 
-LABEL ={"cats" : 0, "dogs" : 1}
+
 
 def load_model(model_path):
     model = CatsandDogsClassifier()
