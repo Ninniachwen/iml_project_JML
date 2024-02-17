@@ -4,7 +4,8 @@ from pathlib import Path
 import torch
 import matplotlib.pyplot as plt
 
-from src.Models.CatsAndDogsModel import CatsandDogsClassifier
+from src.models.CatsAndDogsModel import CatsandDogsClassifier
+from src.utils.image_finder_cats_and_dogs import get_images
 from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate
 
 
@@ -28,17 +29,8 @@ def train_model(
     # seeded and cudnn set to disabled for reproducibility 
     torch.random.manual_seed(random_seed)
     torch.backends.cudnn.enabled = False
-
-    picture_files = []
-
-    for root, _, filenames in os.walk(train_dir):
-        for filename in filenames:
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-                file_path = os.path.join(root, filename)
-                last_subfolder = os.path.basename(os.path.dirname(file_path))
-                picture_files.append((file_path, LABEL[last_subfolder]))
     
-   
+    picture_files, labels = get_images(train_dir)
 
     val_split = int(val_split*len(picture_files))
 
@@ -53,18 +45,7 @@ def train_model(
     train_set = CandDDataSet(image_paths = train_x, labels = train_y, transform=augment_image)
 
 
-    picture_files = []
-
-    for root, _, filenames in os.walk(test_dir):
-        for filename in filenames:
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-                file_path = os.path.join(root, filename)
-                last_subfolder = os.path.basename(os.path.dirname(file_path))
-                picture_files.append((file_path, LABEL[last_subfolder]))
-    
-
-    labels = [label for _, label in picture_files]
-    picture_files = [picture_file for picture_file, _ in picture_files]
+    picture_files, labels = get_images(test_dir)
     
     
     test_set = CandDDataSet(image_paths=picture_files, labels=labels)
@@ -88,16 +69,6 @@ def train_model(
     val_accs = []
     test_accs = []
 
-    for data, _ in train_loader:
-        plt.imshow(data[0].permute(1,2,0),cmap="gray")
-        plt.show()
-        break
-
-    for data, _ in test_loader:
-        plt.imshow(data[0].permute(1,2,0),cmap="gray")
-        plt.show()
-        break
-
     def train(epoch):
         model.train()
         train_loss = 0
@@ -108,7 +79,6 @@ def train_model(
             data = data.to(device) 
             target = target.to(device)
             target = target.to(torch.float32)      
-
             output = model(data)
             output = output.squeeze()
             

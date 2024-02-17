@@ -5,7 +5,14 @@ from torchvision.transforms import v2
 
 transform_normal = v2.Compose([   
     v2.ToImage(),
-    v2.RandomCrop(size=(130,130)),
+    v2.Resize((150, 150)),
+    v2.ToDtype(torch.float32, scale=True),
+    v2.Normalize(mean=[0.5,],std=[0.5,])
+])
+
+transform_validate = v2.Compose([   
+    v2.ToImage(),
+    v2.CenterCrop(size=(130,130)),
     v2.Resize((150, 150)),
     v2.ToDtype(torch.float32, scale=True),
     v2.Normalize(mean=[0.5,],std=[0.5,])
@@ -13,8 +20,7 @@ transform_normal = v2.Compose([
 
 augment_image = v2.Compose([
     v2.ToImage(),
-    v2.RandomRotation(degrees=(0,180)),
-    v2.RandomCrop(size=(100,100)),
+    v2.RandomCrop(size=(130,130)),
     v2.RandomHorizontalFlip(),
     v2.Resize(size=(150,150)),
     v2.ToDtype(torch.float32, scale=True),
