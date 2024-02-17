@@ -6,8 +6,11 @@ import torch
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-#TODO: why mnist from 2 sources? 
+#sys.path.insert(0, parentdir)
+
+import sys
+sys.path.insert(0, "")  # noqa
+
 from Original_Code.src.simplexai.models.image_recognition import MnistClassifier
 from Original_Code.src.simplexai.experiments import mnist
 

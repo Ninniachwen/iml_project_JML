@@ -10,8 +10,6 @@ from src.models.CatsAndDogsModel import CatsandDogsClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet, LABEL
 from src.visualization.images import plot_corpus_decomposition, plot_corpus_decomposition_with_jacobian
 
-
-
 def load_model(model_path):
     model = CatsandDogsClassifier()
     model.load_state_dict(torch.load(model_path))

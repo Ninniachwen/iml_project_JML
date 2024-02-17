@@ -15,7 +15,7 @@ def plot_mnist(data, title: str = "") -> plt.Figure:
     plt.yticks([])
     return plt
 
-def r_2_scores(classifier, latent_rep_approx, latent_rep_true, weights, test_id, test_data, corpus_data, debugging=False):
+def r_2_scores(classifier, latent_rep_approx, latent_rep_true, test_data=None, corpus_data=None, weights=None, test_id=0, debugging=False):
     output_approx = classifier.latent_to_presoftmax(latent_rep_approx).detach()
     output_true = classifier.latent_to_presoftmax(latent_rep_true).detach()
     output_r2_score = sklearn.metrics.r2_score(

@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from simplexai.models.base import BlackBox
-
+from Original_Code.src.simplexai.models.base import BlackBox
 
 class MnistClassifier(BlackBox):
     def __init__(self) -> None:

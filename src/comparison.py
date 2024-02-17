@@ -9,14 +9,16 @@ import os
 import torch
 import sys
 
-import evaluation as e
-import simplex_versions as s
-import classifier_versions as c
 
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
+#sys.path.insert(0, "")  # noqa
+
+import src.evaluation as e
+import src.simplex_versions as s
+import src.classifier_versions as c
 
 RANDOM_SEED=42
 
@@ -107,7 +109,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
 
     if print_jacobians:
 
-            #most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
+        #most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
         #saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
 
         # [Jasmin:] The following works for printing the jacobians. We may want to print them 

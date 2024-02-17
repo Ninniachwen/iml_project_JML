@@ -4,7 +4,7 @@ import seaborn as sns
 import torch
 import torch.nn.functional as F
 
-from simplexai.models.base import BlackBox
+from Original_Code.src.simplexai.models.base import BlackBox
 
 
 class Simplex:
