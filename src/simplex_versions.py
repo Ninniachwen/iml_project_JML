@@ -25,9 +25,9 @@ import torch
     # reg_factor_init=0.1; x_final=100; n_epoch=10000
     # n_keep=decompostion_size=100; test_id=0
 
-REG_FACTOR_INIT  = 1.0  #TODO: compare?
+REG_FACTOR_INIT  = 0.1 # as in mnis exp.  #TODO: compare?
 REG_FACTOR_FINAL = 100
-EPOCHS = 20000
+EPOCHS = 10000
 
 def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier):  # jacobian
     # values take from "approximate_quality" in mnist.py

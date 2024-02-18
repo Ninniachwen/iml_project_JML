@@ -130,5 +130,7 @@ Original_code/data
 *.pkl
 *.pdf
 
+# iml reimplementation
 files/MNIST/*
 _temp/*
+tests/data*

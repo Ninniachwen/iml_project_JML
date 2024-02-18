@@ -45,7 +45,7 @@ def create_decompositions(test_data, test_targets, corpus_data, corpus_targets, 
     for s_id, sample, target in zip(range(len(test_data)), test_data, test_targets):
         #assert test_id < test_size
         sample_weights = weights[s_id].numpy()
-        top_x_ids = sample_weights.argsort()[-decompostion_size:][::-1]
+        top_x_ids:list[int] = sample_weights.argsort()[-decompostion_size:][::-1]
 
         decompostion = []
         for w_id in top_x_ids:

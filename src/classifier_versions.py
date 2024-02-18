@@ -18,7 +18,7 @@ from Original_Code.src.simplexai.experiments import mnist
 SAVE_PATH=os.path.join(parentdir, "files")
 
 
-def train_or_load_mnist(random_seed, cv, corpus_size=100, test_size=10, ):
+def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):
     # the following are standard values which are used in mnist.py to train mnistClassifier
     if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")):
         mnist.train_model(
@@ -35,8 +35,8 @@ def train_or_load_mnist(random_seed, cv, corpus_size=100, test_size=10, ):
     classifier.eval()
 
     # data loader from approximate_quality
-    corpus_loader = mnist.load_mnist(corpus_size, train=True, shuffle=False)
-    test_loader = mnist.load_mnist(test_size, train=False, shuffle=False)
+    corpus_loader = mnist.load_mnist(corpus_size, train=True, shuffle=random_dataloader)
+    test_loader = mnist.load_mnist(test_size, train=False, shuffle=random_dataloader)
     batch_id_test , (test_data, test_targets) = next(enumerate(test_loader))
     test_data = test_data.detach()
     test_latents = classifier.latent_representation(test_data).detach()

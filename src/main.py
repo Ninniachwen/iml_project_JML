@@ -1,4 +1,3 @@
-
 import csv
 from pathlib import Path
 from captum.attr._utils.visualization import visualize_image_attr
@@ -16,7 +15,6 @@ import sys
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-#sys.path.insert(0, "")  # noqa
 
 import src.evaluation as e
 import src.simplex_versions as s
@@ -45,7 +43,7 @@ class Dataset(enum.Enum):
 # for this to work right now you have to follow the install instructions of the original repo
 
 
-def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decompostion_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_tests=True, decomposition_tests=True):
+def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_scores=True, decompose=True, random_dataloader=True):
     """ #TODO: aktualisieren
     Decide if we want to train our Simplex model the original or the new implemented way
 
@@ -66,12 +64,16 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
 
         The score-functions are taken directly from mnist.py of the original code
     """
+
+    assert corpus_size >= decomposition_size, "decomposition size can't be larger than corpus"
+    assert test_size > test_id, "test_id can't be larger than test_size"
+
     torch.random.manual_seed(RANDOM_SEED + cv)
     torch.backends.cudnn.deterministic = True # https://www.typeerror.org/docs/pytorch/generated/torch.nn.conv1d
 
-    # must return classifier, corpus_data, corpus_latents, corpus_target, test_data, test_targets, test_latents
+    # must return classifier, (corpus_data, corpus_latents, corpus_target), (test_data, test_targets, test_latents)
     if dataset is Dataset.MNIST:
-        classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size)
+        classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
         #TODO: maybe keep as triples and hand triples to models
         corpus_data, corpus_latents, corpus_target = corpus
         test_data, test_targets, test_latents = test_set
@@ -83,28 +85,27 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     # must return latent_rep_approx, weights, jacobian
     if model_type is Model_Type.ORIGINAL:
         print(f"Starting on cv {cv} with the original model!")
-        latent_rep_approx, weights, jacobian = s.original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.original_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier)
 
     elif model_type is Model_Type.ORIGINAL_COMPACT:
         print(f"Starting on cv {cv} with the compact original model!")
-        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier)
     
     elif model_type is Model_Type.O_C_NO_SOFTMAX:
         print(f"Starting on cv {cv} with the compact original model but without using softmax layer while training!")
-        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier, softmax=False)
+        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, softmax=False)
         
     elif model_type is Model_Type.O_C_NO_REGULIZATION:
         print(f"Starting on cv {cv} with the compact original model but without using regularization while training!")
-        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier, regularisation=False)
+        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, regularisation=False)
         
     elif model_type is Model_Type.REIMPLEMENTED:
         print(f"Starting on cv {cv} with our own reimplemented model!")
-        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier)
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier)
     
     elif model_type is Model_Type.R_NO_SOFTMAX:
         print(f"Starting on cv {cv} with our own reimplemented model but without using softmax layer while training!")
-        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decompostion_size, test_id, classifier, softmax=False)
-    
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, softmax=False)
 
     else:
         raise Exception(f"'{model_type}' is no valid input for model_type")
@@ -114,13 +115,13 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     
     latent_r2_score = None
     output_r2_score = None
-    if r_2_tests:
+    if r_2_scores:
         output_r2_score, latent_r2_score = e.r_2_scores(classifier, latent_rep_approx, latent_rep_true, weights, test_id, test_data, corpus_data)
     
     decompostions = None
-    if decomposition_tests:
+    if decompose:
         #TODO: use latents instead of weights?
-        decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decompostion_size, weights)
+        decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decomposition_size, weights)
 
     if print_jacobians:
 
@@ -147,7 +148,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions
 
 
-def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, ablation=False): 
+def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False): 
     #TODO: remove duplicate name test_id. (ok in csv, should be called different in rest of code (this function and others). (sample_id?))
 
     print(f"   starting test runs with parameters:\n   corpus_size: {corpus_size}, test_size: {test_size}, decomposition_size: {decomposition_size}, cv: {cv}, test_id: {test_id}")
@@ -159,10 +160,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
     decompostions = []
     
     running_int = 0
-    if ablation:
-        file_path = os.path.join(parentdir, "files" , "ablation_results.csv")
-    else:
-        file_path = os.path.join(parentdir, "files" , "comparison_results.csv")
+    file_path = os.path.join(parentdir, "files" , filename)
     file = Path(file_path)
     mode = "a" if file.is_file() else "w"   # append if file exists, assuming either both files exist, or none
     with open(file_path, mode) as f1:
@@ -192,8 +190,6 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         ])
             
         for d in Dataset:
-            # file_path_r2 = os.path.join(parentdir, "files" , "r2_experiment.csv")
-            # with open(file_path_r2, mode) as f1:   #write original experimetns resuts in extra file?
             for m in Model_Type:
                 weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
                     model_type=m, 
@@ -201,8 +197,9 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     cv=cv,
                     corpus_size=corpus_size, 
                     test_size=test_size, 
-                    decompostion_size=decomposition_size, 
-                    test_id=test_id)
+                    decomposition_size=decomposition_size, 
+                    test_id=test_id,
+                    random_dataloader=random_dataloader)
                 
                 weights_all.append(weights)
                 latent_r2_scores.append(latent_r2_score)
@@ -235,7 +232,6 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     corpus_targest,
                     #TODO: generate image of decomposition, store & link
                     ])
-                #writer.writerow([
                 running_int += 1
 
     return weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions
@@ -258,17 +254,21 @@ def run_ablation():
                     for id in test_id:
                         if id > (d-1):
                             pass
-                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, ablation=True)
+                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, filename="ablation_results.csv")
 
 
 def run_original_experiment():
-    print("TODO") #TODO: code this (like in original simplex)
+    # MNIST Approximation Quality Experiment
+    # as in approximation_quality in original simplex
+    decomposition_size = [3, 5, 10, 20, 50]
+    cv = range(0,10)
+    for d in decomposition_size:
+        for v in cv:    # the results from the paper were obtained by taking all integer CV between 0 and 9
+            run_all_experiments(corpus_size=1000, test_size=100, decomposition_size=d, cv=v, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True)
+            return
 
 if __name__ == "__main__":
-
     # training mnist, from minst.py
-    #run_multiple_experiments()
-    #do_mnist_experiment()
     # weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
     #     model_type=Model_Type.REIMPLEMENTED, 
     #     dataset=Dataset.MNIST, 
@@ -279,10 +279,10 @@ if __name__ == "__main__":
     #     test_id=0, print_jacobians=True)
     # print(latent_r2_score)
 
-    #TODO: paper experiment: corpus_size = 1000; decomposition_size = test_size = 3-50
 
-    run_all_experiments(corpus_size=100, test_size=10, decomposition_size=100)
+    #run_all_experiments(corpus_size=100, test_size=10, decomposition_size=100)
     #run_ablation()
+    run_original_experiment()
 
     print("Done")
     #TODO: join test_set into corpus and see what happens
