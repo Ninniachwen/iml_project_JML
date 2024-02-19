@@ -16,14 +16,14 @@ sys.path.insert(0, "")  # noqa
 from Original_Code.src.simplexai.models.image_recognition import MnistClassifier
 from Original_Code.src.simplexai.experiments import mnist
 from src.cats_and_dogs_training import train_model
-from src.models.CatsAndDogsModel import CatsAndDogsClassifier
+from src.Models.CatsAndDogsModel import CatsandDogsClassifier 
 from src.cats_and_dogs_predictions import load_model
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import get_images
 from src.utils.corpus_creator import make_corpus
 from src.heart_failure_prediction import train_heartfailure_model, load_data
 from src.datasets.heartfailure_dataset import HeartFailureDataset
-from src.models.HeartfailureModel import HeartFailureClassifier
+from src.Models.HeartfailureModel import HeartFailureClassifier
 
 
 SAVE_PATH=os.path.join(parentdir, "files")

@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 import torch
 from torch.utils.data import DataLoader
 
-from src.models.HeartfailureModel import HeartFailureClassifier
+from src.Models.HeartfailureModel import HeartFailureClassifier
 from src.datasets.heartfailure_dataset import HeartFailureDataset     
 
 

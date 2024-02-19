@@ -105,14 +105,32 @@ def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_late
     return latent_rep_approx.detach(), weights_softmax.detach(), jacobian
 
     
-def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model, softmax=True):
+def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model, mode="softmax", weight_init_zero=True):
+    """Train our reimplemented simplex model.
+
+    Parameters:
+        corpus_inputs: Feature vector of Corpus examples
+        corpus_latents: Latent representations of Corpus examples, run through according blackbos model
+        test_inputs: Feature vector of Test examples (not used, but given as argument to keep function calls the same)
+        test_latents: Latent representations of Test examples, run through according model
+        decompostion_size: int; with how many corpus examples a test example should be explained
+        test_id: int; for which Test example the jacobians should be returned
+        model: the original blackbox model (only needed for jacobians)
+        mode: "softmax", "normalize" or "nothing"; diffenrent modes for training the simplex model; used for ablation study
+        weight_init_zero: bool; used for ablation study
+    
+    Returns:
+        latent_rep_approx: the latent representations learned by the simplex model; used for r2 score
+        weights_softmax: the (softmaxed) weights of the learned simplex model
+        jacobian: the jacobians for the given test id
+        """
     size_test = test_latents.shape[0]
     size_corpus = corpus_inputs.shape[0]
-    simplex = Simplex_Model(size_corpus, size_test)
+    simplex = Simplex_Model(size_corpus, size_test, weight_init_zero=weight_init_zero)
     optimizer = torch.optim.Adam([simplex.weight]) # same optimizer as original
     for epoch in range(EPOCHS):
         optimizer.zero_grad()
-        prediction = simplex(corpus_latents, softmax=softmax)
+        prediction = simplex(corpus_latents, mode=mode)
         loss = ((prediction - test_latents)** 2).sum() # same as original
         loss.backward()
         optimizer.step()
@@ -123,6 +141,7 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
             )
     
     weights = simplex.weight.clone()
+    print(weights[0].max())
     # manually set the weights which should not be in the decomposition to 0
     weight_id_irrelevant = weights.argsort()[:,:(size_corpus - decompostion_size)]
     for i in range(size_test):
@@ -132,33 +151,48 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
     simplex.weight = weights
 
     weights_softmax = torch.nn.functional.softmax(simplex.weight, dim=1)
+    print(weights_softmax[0].max())
 
-    latent_rep_approx = simplex(corpus_latents, softmax=softmax) 
+    latent_rep_approx = simplex(corpus_latents, mode=mode) 
 
     input_baseline = torch.zeros(corpus_inputs.shape)  # also as global parameter? 
 
     jacobian = simplex.get_jacobian(test_id, corpus_inputs, test_latents, input_baseline, model)
 
-    return latent_rep_approx.detach(), weights_softmax.detach(), jacobian
+    weights = weights_softmax
+
+    return latent_rep_approx.detach(), weights.detach(), jacobian
 
 
 
-class Simplex_Model(torch.nn.Module): #reimplemented
+class Simplex_Model(torch.nn.Module):
+    """Our reimplemented model. """
     # idea: do the training done in "fit"-Function of "simplex.py" in an more intuitive way
     # in original code, they cut down the inputs to only keep the most important corpus examples ("n_keep")while training
     # here, we train as normal and later set the not important weights to 0
-    def __init__(self, size_corpus, size_test):
+    def __init__(self, size_corpus, size_test, weight_init_zero=True):
         super().__init__()
-        self.weight = torch.zeros(size_test, size_corpus, requires_grad=True)
+        if weight_init_zero:
+            # same as original
+            self.weight = torch.zeros(size_test, size_corpus, requires_grad=True)
+        else:
+            self.weight = torch.randn(size_test, size_corpus, requires_grad=True)
         # use basically a layer like torch.nn.Linear(size_corpus, size_test, bias=False)
 
-    def forward(self, x, softmax=True):
-        if softmax:
+    def forward(self, x, mode="softmax"):
+        # modes: softmax, normalize, nothing
+        if mode=="softmax":
             weight = torch.nn.functional.softmax(self.weight,dim=1)
-        else:  
+        elif mode == "normalize":
+            # we only want positive weights
+            weight = torch.nn.functional.normalize(abs(self.weight),dim=1)
+            #print(self.weight[0].max())
+        elif mode=="nothing":  
             # with this (using the weights without softmax) during training, the model seems to overfit - 
             # the r2 values are better, but the weights are very close together
             weight = self.weight
+        else:
+            raise Exception(f"'{mode}' is no valid input for mode!")
         x = torch.matmul(weight, x)
         return x
     
