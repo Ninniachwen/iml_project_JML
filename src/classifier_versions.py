@@ -61,7 +61,7 @@ def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, ran
 
 
 def train_or_load_CaN_model(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):
-    
+
     torch.manual_seed(seed=random_seed)
     
     save_path = os.path.join(SAVE_PATH,f"model_cad{cv}.pth")
@@ -123,7 +123,7 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
 
     (corpus_data, corpus_target) = make_corpus(train_loader, corpus_size=corpus_size)
 
-    (test_data, test_target) = make_corpus(test_loader, corpus_size=corpus_size)
+    (test_data, test_targets) = make_corpus(test_loader, corpus_size=corpus_size)
 
     corpus_data = corpus_data.detach()
 
