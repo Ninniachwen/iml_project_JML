@@ -13,8 +13,8 @@ parentdir = os.path.dirname(currentdir)
 import sys
 sys.path.insert(0, "")  # noqa
 
-from Original_Code.src.simplexai.models.image_recognition import MnistClassifier
-from Original_Code.src.simplexai.experiments import mnist
+from original_code.src.simplexai.models.image_recognition import MnistClassifier
+from original_code.src.simplexai.experiments import mnist
 from src.cats_and_dogs_training import train_model
 from src.Models.CatsAndDogsModel import CatsandDogsClassifier 
 from src.cats_and_dogs_predictions import load_model
@@ -57,7 +57,7 @@ def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, ran
     #TODO: maybe implement own mnist latents fuction?
     #TODO: which detach is truely necessary?
     
-    return classifier, (corpus_data, corpus_latents, corpus_target), (test_data, test_targets, test_latents)
+    return classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents)
 
 
 def train_or_load_CaN_model(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):

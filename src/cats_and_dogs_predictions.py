@@ -67,13 +67,14 @@ def do_simplex_with_cats_and_dogs(model, corpus_inputs, test_inputs, decompositi
     test_latents =  model.latent_representation(test_inputs[0].detach()).detach()
     corpus_inputs = corpus_inputs[0].detach()
     test_inputs = test_inputs[0].detach()
-    latent_rep_approximations, weights, jacobian = reimplemented_model(classifier=model,
-                                                                        corpus_inputs=corpus_inputs,
-                                                                        corpus_latents=corpus_latents,
-                                                                        test_inputs=test_inputs,
-                                                                        test_latents=test_latents,
-                                                                        decompostion_size=decomposition_size,
-                                                                        test_id=test_id)
+    latent_rep_approximations, weights, jacobian = reimplemented_model(
+        classifier=model,
+        corpus_inputs=corpus_inputs,
+        corpus_latents=corpus_latents,
+        test_inputs=test_inputs,
+        test_latents=test_latents,
+        decompostion_size=decomposition_size,
+        test_id=test_id)
 
     return latent_rep_approximations, weights, jacobian
 
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     
     corpus_inputs = next(iter(corpus_loader))
     print(type(corpus_inputs[0]),len(corpus_inputs), corpus_inputs[0].shape)
-    exit()
+    exit() 
     corpus_latents = model.latent_representation(corpus_inputs[0].detach()).detach()
     test_latents =  model.latent_representation(test_inputs[0].detach()).detach()
     corpus_inputs = corpus_inputs[0].detach()

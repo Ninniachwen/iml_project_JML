@@ -6,8 +6,8 @@ import sys
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
-from Original_Code.src.simplexai.utils.schedulers import ExponentialScheduler
-from Original_Code.src.simplexai.explainers.simplex import Simplex
+from original_code.src.simplexai.utils.schedulers import ExponentialScheduler
+from original_code.src.simplexai.explainers.simplex import Simplex
 
 import torch
 

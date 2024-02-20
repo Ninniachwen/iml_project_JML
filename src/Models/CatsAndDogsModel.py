@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from Original_Code.src.simplexai.models.base import BlackBox
+from original_code.src.simplexai.models.base import BlackBox
 
 class CatsandDogsClassifier(BlackBox):
     def __init__(self)-> None:

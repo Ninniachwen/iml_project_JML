@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from Original_Code.src.simplexai.models.base import BlackBox
+from original_code.src.simplexai.models.base import BlackBox
 
 class HeartFailureClassifier(BlackBox):
     def __init__(self)-> None:
