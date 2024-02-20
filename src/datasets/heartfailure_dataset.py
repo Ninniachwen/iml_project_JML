@@ -2,6 +2,9 @@ import torch
 from torch.utils.data import Dataset
 
 class HeartFailureDataset(Dataset):
+    """
+    HeartFailure Dataset
+    """
     def __init__(self, x, y) -> None:
         self.X = x
         self.y = y.astype(int)
@@ -11,5 +14,5 @@ class HeartFailureDataset(Dataset):
     
     def __getitem__(self, idx):
         data = torch.tensor(self.X[idx],dtype=torch.float32)
-        target = torch.tensor(self.y[idx], dtype=torch.float32)
+        target = self.y[idx]
         return data, target
