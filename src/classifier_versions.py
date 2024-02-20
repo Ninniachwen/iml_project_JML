@@ -13,17 +13,17 @@ parentdir = os.path.dirname(currentdir)
 import sys
 sys.path.insert(0, "")  # noqa
 
-from original_code.src.simplexai.models.image_recognition import MnistClassifier
-from original_code.src.simplexai.experiments import mnist
+from Original_code.src.simplexai.models.image_recognition import MnistClassifier
+from Original_code.src.simplexai.experiments import mnist
 from src.cats_and_dogs_training import train_model
-from src.Models.CatsAndDogsModel import CatsandDogsClassifier 
+from src.models.CatsAndDogsModel import CatsandDogsClassifier
 from src.cats_and_dogs_predictions import load_model
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import get_images
 from src.utils.corpus_creator import make_corpus
-from src.heart_failure_prediction import train_heartfailure_model, load_data
+from src.heartfailure_prediction import train_heartfailure_model, load_data
 from src.datasets.heartfailure_dataset import HeartFailureDataset
-from src.Models.HeartfailureModel import HeartFailureClassifier
+from src.models.HeartfailureModel import HeartFailureClassifier
 
 
 SAVE_PATH=os.path.join(parentdir, "files")
@@ -64,37 +64,26 @@ def train_or_load_CaN_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
 
     torch.manual_seed(seed=random_seed)
     
-    save_path = os.path.join(SAVE_PATH,f"model_cad{cv}.pth")
-    if not os.path.isfile(save_path):
-        train_model(save_path=save_path, cv=cv, random_seed=random_seed)
-    
-    classifier = load_model(save_path)
+    if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cad_{cv}.pth")):
+        train_model(save_path=SAVE_PATH, cv=cv, random_seed=random_seed)
+
+    classifier = load_model(os.path.join(SAVE_PATH,f"model_cad_{cv}.pth"))
     
     test_dir = r"data\Animal Images\test"
 
     picture_files, labels = get_images(test_dir)
-    
     test_set = CandDDataSet(image_paths=picture_files, labels=labels)
-
     test_loader = DataLoader(test_set, batch_size=200, shuffle=True)
-
     (test_data, test_targets) = make_corpus(test_loader, corpus_size=10)
-
     test_data = test_data.detach()
     test_latents = classifier.latent_representation(test_data).detach()
 
     corpus_dir = r"data\Animal Images\train"
 
-    picture_files = []
-
     picture_files, labels = get_images(corpus_dir)
-    
     corpus_set = CandDDataSet(image_paths=picture_files, labels=labels)
-
     corpus_loader = DataLoader(corpus_set, batch_size=200, shuffle=True)
-
     (corpus_data, corpus_target) = make_corpus(corpus_loader=corpus_loader, corpus_size=corpus_size)
-
     corpus_data = corpus_data.detach()
     corpus_latents = classifier.latent_representation(corpus_data).detach()
 
@@ -104,16 +93,13 @@ def train_or_load_CaN_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
 def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):
     torch.manual_seed(random_seed)
 
-    save_path = os.path.join(SAVE_PATH, f"model_heartfailure{cv}.pth")
     datapath = r"data\heart.csv"
     x,y = load_data(datapath)
     x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.1,random_state=42,shuffle=True)
     classifier = HeartFailureClassifier()
-
-    if not os.path.isfile(save_path):
-        train_heartfailure_model(classifier, save_path, x_train,y_train,x_test,y_test)
-
-    classifier.load_state_dict(torch.load(os.path.join(save_path)))
+    if not os.path.isfile(os.path.join(SAVE_PATH, f"model_heartfailure_{cv}.pth")):
+        train_heartfailure_model(classifier, save_path=SAVE_PATH, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
+    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH, f"model_heartfailure_{cv}.pth")))
 
     train_data = HeartFailureDataset(x_train,y_train)
     test_data = HeartFailureDataset(x_test,y_test)
@@ -134,4 +120,3 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     test_latents = classifier.latent_representation(test_data).detach()
 
     return classifier, (corpus_data, corpus_latents, corpus_target), (test_data, test_targets, test_latents)
-

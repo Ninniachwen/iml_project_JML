@@ -1,10 +1,16 @@
 import os
+import inspect
 from torch.utils.data import DataLoader, random_split
 from pathlib import Path
 import torch
 import matplotlib.pyplot as plt
 
-from src.Models.CatsAndDogsModel import CatsandDogsClassifier
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+
+from src.models.CatsAndDogsModel import CatsandDogsClassifier
+from src.models.CatsAndDogsModel import CatsandDogsClassifier
+from src.models.CatsAndDogsModel import CatsandDogsClassifier
 from src.utils.image_finder_cats_and_dogs import get_images
 from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate, LABEL
 
@@ -13,7 +19,7 @@ from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, tran
 def train_model(
         save_path: Path,
         cv: int,
-        n_epoch: int = 60,
+        n_epoch: int = 40,
         batch_size_train: int = 128,
         batch_size_test: int = 128,
         batch_size_val: int = 128,
@@ -21,20 +27,34 @@ def train_model(
         learning_rate: float = 0.001,
         val_split: float = 0.1
 )-> CatsandDogsClassifier:
-    
+    """
+    Creates and trains the Cats and Dogs classifier model. Cross binary loss is used. Adam optimizer with a learning rate scheduler is used. 
+    Loss on test, validation and train set is printed. Accuracy on Validation and test_set is reported
+    :param save_path: Model is saved to save_path+"model_cad{cv}.pth". 
+    :param cv: model version
+    :param n_epoch: numbers of epochs for training
+    :param batch_size_train: training batch size, resetting can influence model and training performance
+    :param batch_size_test: testing batch size
+    :param batch_size_val: validation batch size
+    :param learning_rate: learning rate, resetting not recommended
+    :param val_split: portion of the training set used for validation. Values between 0.1 and 0.5 allowed  
+    """
     # seeded and cudnn set to disabled for reproducibility 
     torch.random.manual_seed(random_seed)
     torch.backends.cudnn.enabled = False
     
+    #path to train and test directory 
     train_dir = r"data\Animal Images\train"
     test_dir = r"data\Animal Images\test"
 
     picture_files, labels = get_images(train_dir)
 
+    picture_files = [(picture, label) for picture,label in zip(picture_files,labels)]
+
     val_split = int(val_split*len(picture_files))
 
     train_files, val_files = random_split(picture_files, [len(picture_files) - val_split, val_split])
-
+    
     val_y = [label for _, label in val_files]
     val_x = [picture_file for picture_file, _ in val_files]
     train_y = [label for _, label in train_files]
@@ -43,14 +63,14 @@ def train_model(
     val_set = CandDDataSet(image_paths = val_x, labels = val_y, transform=transform_validate)
     train_set = CandDDataSet(image_paths = train_x, labels = train_y, transform=augment_image)
 
+    train_loader = DataLoader(train_set, batch_size_train, shuffle=True)
+    val_loader = DataLoader(val_set, batch_size_val, shuffle=False)
+
 
     picture_files, labels = get_images(test_dir)
     
-    
     test_set = CandDDataSet(image_paths=picture_files, labels=labels)
-
-    train_loader = DataLoader(train_set, batch_size_train, shuffle=True)
-    val_loader = DataLoader(val_set, batch_size_val, shuffle=False)
+    
     test_loader = DataLoader(test_set, batch_size_test, shuffle=False)
 
     
@@ -61,6 +81,7 @@ def train_model(
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer)
     
     lossF = torch.nn.BCELoss(reduction='mean')
+
     train_losses = []
     test_losses = []
     val_losses = []
@@ -85,14 +106,13 @@ def train_model(
             optimizer.step()
         train_loss /= len(train_loader)
         train_losses.append(train_loss)
-        print(f"Train epoch {epoch}, Loss = {train_losses[-1]}")
+        print(f"Train epoch {epoch}, Training loss = {train_losses[-1]:.4f}")
 
 
     def validate():
         model.eval()
         val_loss = 0
         correct = 0
-        balance = 0
         with torch.no_grad():
             for data,target in val_loader:
 
@@ -104,14 +124,12 @@ def train_model(
                 val_loss += lossF(output,target).item()
                 
                 pred = (output>=0.5).int()
-                balance += torch.mean(pred.float()).item()
                 correct += torch.sum(pred.eq(target.int())).item()
 
-        balance /= len(val_loader)
         val_loss /= len(val_loader)
         val_accs.append(correct/len(val_loader.dataset))
         val_losses.append(val_loss)
-        print(f"Avgerage validation loss. {val_losses[-1]}, Valaccuracy: {correct}/{len(val_loader.dataset)} = {val_accs[-1]} , Balance: {balance}")
+        print(f"Avgerage validation loss. {val_losses[-1]:.4f}, Validation accuracy: {correct}/{len(val_loader.dataset)} = {val_accs[-1]:.4f}")
 
     def test():
         model.eval()
@@ -133,7 +151,7 @@ def train_model(
         test_loss /= len(test_loader)
         test_accs.append(correct/len(test_loader.dataset))
         test_losses.append(test_loss)
-        print(f"Average test loss. {test_losses[-1]}, Testaccuracy: {correct}/{len(test_loader.dataset)}")
+        print(f"Average test loss. {test_losses[-1]:.4f}, Testaccuracy: {correct}/{len(test_loader.dataset)} = {test_accs[-1]:.4f}")
         
 
     test()
@@ -144,6 +162,6 @@ def train_model(
         scheduler.step(val_losses[-1])
     test() 
     
-    torch.save(optimizer.state_dict(), save_path)
+    torch.save(model.state_dict(), os.path.join(save_path, f"model_cad_{cv}.pth"))
     return model
 

@@ -24,6 +24,13 @@ def make_corpus(corpus_loader: DataLoader, corpus_size=100, n_classes=2):
                     corpus_files.append(file)
                     labels.append(label)
                     labelk[label]+=1
+                else:
+                    corpus_1_indices = [i for i,x in enumerate(labels) if x == label]
+                    labelk[label]+=1
+                    sample_index = random.choice(range(labelk[label]))
+                    if sample_index < len(corpus_1_indices):
+                        corpus_files[corpus_1_indices[sample_index]]=file
+                        labels[corpus_1_indices[sample_index]]=label
 
     corpus_files = torch.stack(corpus_files)    
     labels = torch.stack(labels)
