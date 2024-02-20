@@ -2,6 +2,7 @@ import inspect
 import os
 import sys
 import unittest
+import numpy as np
 
 import torch
 
@@ -15,9 +16,40 @@ import src.simplex_versions as s
 import src.classifier_versions as c
 import src.main as m
 
-class TestAll(unittest.TestCase):
+class UnitTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(self):
+        print(10*"-" + "0. training simplex" + 10*"-")
+        
+        models = [m.Model_Type.ORIGINAL, m.Model_Type.ORIGINAL_COMPACT, m.Model_Type.REIMPLEMENTED]     # without ablation models
+        self.decomposition_size = 5
+        self.corpus_size = 100
+        self.test_size = 10
+        self.test_id = 0
+        self.results = []
+        for model in models:
+            w, lr2, or2, j, d = m.do_simplex(
+                model_type=model, 
+                decomposition_size=self.decomposition_size, 
+                corpus_size = self.corpus_size,
+                test_size = self.test_size,
+                test_id = self.test_id,
+                r_2_scores=True, 
+                random_dataloader=False # we want the same sample set for each model to train on
+                )  
+            self.results.append({"w": w, "lr2": lr2, "or2": or2, "jac": j, "dec":d})
+            # weights, latent_r2_score, output_r2_score, jacobian, decompostions
+
+        self.sample_id = 0
+        self.most_imp = 0
+
+        
 
     def test_shuffle_data_loader(self):  # compare first element from loaded dataset
+        print(10*"-" + "1. Unit tests" + 10*"-")
+        print(3*">" + "1.1" + "testing shuffle data loader")
+
         # not shuffled, same first sample
         _, corpus1, test1 = c.train_or_load_mnist(42, 0, 100, 10, random_dataloader=False)
         _, corpus2, test2 = c.train_or_load_mnist(42, 0, 100, 10, random_dataloader=False)
@@ -35,68 +67,115 @@ class TestAll(unittest.TestCase):
         self.assertFalse(torch.equal(test4[0][0], test3[0][0]), "mnist test loader is not always shuffeling in the same way!")
     
     def test_r_2_scores(self):
+        print(3*">" + "1.2" + "testing r2 scores")
         c1, corpus1, test1 = c.train_or_load_mnist(42, 0, 100, 10, random_dataloader=True)
         c2, corpus2, test2 = c.train_or_load_mnist(42, 0, 100, 10, random_dataloader=True)
         result = e.r_2_scores(c1, corpus1[1], corpus1[1])
         self.assertEqual(result[0], 1.0, "score of original vs. original should be 1.0")
 
         result = e.r_2_scores(c1, corpus1[1], corpus2[1])
-        self.assertNotEqual(result[0], 1.0)    # score of two very different samples should be 1.0
+        self.assertNotEqual(result[0], 1.0)    # score of two different samples should not be 1.0
         
     def test_jacobians(self):
-        print("TODO: implement test_jacobians")# TODO: implement
+        print("TODO:  1.3 implement test_jacobians")# TODO: implement
         # test original jacobian method against ours
 
-    # check return shapes of do simplex
-        
+
+
+
     # check if both loaders return same format
-        
+    
 
     # edge cases für input var (testset > corpus)
 
     # exceptions
         
     #TODO: test random seed for classifier or simplex model?
-    
 
-    def test_simplex_versions_decomposition(self): # without ablation
-        models = [m.Model_Type.ORIGINAL, m.Model_Type.ORIGINAL_COMPACT, m.Model_Type.REIMPLEMENTED]
-        decomposition_size = 5
-        results = []
-        for model in models:
-            _, _, _, _, decomp = m.do_simplex(model_type=model, decomposition_size=decomposition_size, r_2_scores=False, random_dataloader=False)  # we want the same sample set for each model to train on
-            results.append(decomp)
+    
+    
+    
+    def test_simplex_size(self):
+        """
+        check return shapes of do_simplex
+        """
+        print(10*"-" + "2. testing do_simplex" + 10*"-")
+        print(3*">" + "2.1" + "testing do_simplex shapes & types")
+        # weigts
+        self.assertEqual(list(self.results[0]["w"].shape), [self.test_size, self.corpus_size], "weights of original model have incorrect shape!")
+        self.assertEqual(list(self.results[1]["w"].shape), [self.test_size, self.corpus_size], "weights of compact model have incorrect shape!")
+        self.assertEqual(list(self.results[2]["w"].shape), [self.test_size, self.corpus_size], "weights of reimplemented model have incorrect shape!")
         
-        sample_id = 0
-        most_imp = 0
+        # latent_r2_score
+        self.assertEqual(type(self.results[0]["lr2"]), np.float64, "latent_r2_score of original model have incorrect type!")
+        self.assertEqual(type(self.results[1]["lr2"]), np.float64, "latent_r2_score of compact model have incorrect type!")
+        self.assertEqual(type(self.results[2]["lr2"]), np.float64, "latent_r2_score of reimplemented model have incorrect type!")
         
+        # output_r2_score
+        self.assertEqual(type(self.results[0]["or2"]), np.float64, "output_r2_score of original model have incorrect shape!")
+        self.assertEqual(type(self.results[1]["or2"]), np.float64, "output_r2_score of compact model have incorrect shape!")
+        self.assertEqual(type(self.results[2]["or2"]), np.float64, "output_r2_score of reimplemented model have incorrect shape!")
+        
+        # jacobian
+        self.assertEqual(self.results[0]["jac"].shape[0], self.corpus_size, "jacobian of original model have incorrect shape!")
+        #self.assertEqual(self.results[1]["jac"].shape[0], self.corpus_size, "jacobian of compact model have incorrect shape!") #TODO: implenent jacobians
+        self.assertEqual(self.results[2]["jac"].shape[0], self.corpus_size, "jacobian of reimplemented model have incorrect shape!")
+        
+        # decompostion shape
+        orig_decomp = self.results[0]["dec"]
+        compact_decomp = self.results[1]["dec"]
+        rempl_decomp = self.results[2]["dec"]
+        self.assertEqual(len(orig_decomp), self.test_size, "decomposition of original model have incorrect shape! (not a decomposition for each test sample)")
+        self.assertEqual(len(compact_decomp), self.test_size, "decomposition of compact model have incorrect shape! (not a decomposition for each test sample)")
+        self.assertEqual(len(rempl_decomp), self.test_size, "decomposition of reimplemented model have incorrect shape! (not a decomposition for each test sample)")
+
+        # decomposition types & structure
+        # {'sample_id': 0, 'img': tensor(), 'target': 7, 'decomposition': [
+        #    {'c_id': 84, 'c_weight': 0.79606116, 'c_img': tensor(), 'c_target': 7}, ...
+        # ]}
+        self.assertEqual(type(rempl_decomp[0]["sample_id"]), int, "decomposition of reimplemented model have incorrect type! (sample_id no integer)")
+        self.assertEqual(type(rempl_decomp[0]["img"]), torch.Tensor, "decomposition of reimplemented model have incorrect type! (sample img no tensor)")
+        self.assertEqual(type(rempl_decomp[0]["target"]), int, "decomposition of reimplemented model have incorrect type! (target no integer)")
+        self.assertEqual(type(rempl_decomp[0]["decomposition"][self.sample_id]["c_id"]), np.int64, "decomposition of reimplemented model have incorrect type! (corpus id no int)")
+        self.assertEqual(type(rempl_decomp[0]["decomposition"][self.sample_id]["c_weight"]), np.float32, "decomposition of reimplemented model have incorrect type! (corpus weight no flaot)")
+        self.assertEqual(type(rempl_decomp[0]["decomposition"][self.sample_id]["c_img"]), torch.Tensor, "decomposition of reimplemented model have incorrect type! (corpus img no tensor)")
+        self.assertEqual(type(rempl_decomp[0]["decomposition"][self.sample_id]["c_target"]), int, "decomposition of reimplemented model have incorrect type! (corpus target no int)")
+
+
+
+    def test_simplex_versions_decomposition(self):
+        print(3*">" + "2.2" + "testing decomposition contents")
         # same sample?
-        self.assertEqual(results[0][sample_id]["sample_id"], results[1][sample_id]["sample_id"], "got different samples!")
-        self.assertEqual(results[0][sample_id]["sample_id"], results[2][sample_id]["sample_id"], "got different samples!")
+        self.assertEqual(self.results[0]["dec"][self.sample_id]["sample_id"], self.results[1]["dec"][self.sample_id]["sample_id"], "got different samples!")
+        self.assertEqual(self.results[0]["dec"][self.sample_id]["sample_id"], self.results[2]["dec"][self.sample_id]["sample_id"], "got different samples!")
 
         
         # descending order of corpus importance in decomposition (evaluation.py decompose)
 
         
         # quality tests:
+        print(10*"-" + "testing quality of decompositions" + 10*"-")
 
+        print(" " + 3*">" + "3.1" + "testing for most important explainer in decomp")
         # most important explainer is same class as sample (tested only for first sample, not all 10)?
-        self.assertEqual(results[0][sample_id]["target"], results[0][sample_id]["decomposition"][most_imp]["c_target"], "quality issue, most important explainer has different target than sample! (Original Simplex)")
-        self.assertEqual(results[1][sample_id]["target"], results[1][sample_id]["decomposition"][most_imp]["c_target"], "quality issue, most important explainer has different target than sample! (compact simplex)")
-        self.assertEqual(results[2][sample_id]["target"], results[2][sample_id]["decomposition"][most_imp]["c_target"], "quality issue, most important explainer has different target than sample! (reimplemented simplex)")
+        self.assertEqual(self.results[0]["dec"][self.sample_id]["target"], self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_target"], "quality issue, most important explainer has different target than sample! (Original Simplex)")
+        self.assertEqual(self.results[1]["dec"][self.sample_id]["target"], self.results[1]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_target"], "quality issue, most important explainer has different target than sample! (compact simplex)")
+        self.assertEqual(self.results[2]["dec"][self.sample_id]["target"], self.results[2]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_target"], "quality issue, most important explainer has different target than sample! (reimplemented simplex)")
         
+        print(" " + 3*">" + "3.2" + "comparing most important explainer in decomp between models")
         # check if explainer id's for first img is same for all models
-        self.assertEqual(results[0][sample_id]["decomposition"][most_imp]["c_id"], results[1][sample_id]["decomposition"][most_imp]["c_id"], msg="most important explainer differs btw original & compact simplex!")
-        self.assertEqual(results[0][sample_id]["decomposition"][most_imp]["c_id"], results[1][sample_id]["decomposition"][most_imp]["c_id"], msg="most important explainer differs btw compact & reimplemented simplex!")
+        self.assertEqual(self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], self.results[1]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw original & compact simplex!")
+        self.assertEqual(self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], self.results[1]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw compact & reimplemented simplex!")
 
         # check if same order of decomposition-id
 
 
+        print(" " + 3*">" + "3.3" + "comparing importance of explainers between models")
         # same probability for all explainers (btw models) ?
         places_acccuracy = 4
-        orig_top_weigts = [results[0][sample_id]["decomposition"][i]["c_weight"] for i in range(decomposition_size)]
-        compact_top_weights = [results[1][sample_id]["decomposition"][i]["c_weight"] for i in range(decomposition_size)]
-        reimpl_top_weights = [results[1][sample_id]["decomposition"][i]["c_weight"] for i in range(decomposition_size)]
+        orig_top_weigts = [self.results[0]["dec"][self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
+        compact_top_weights = [self.results[1]["dec"][self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
+        reimpl_top_weights = [self.results[1]["dec"][self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
         
         self.assertAlmostEqual(orig_top_weigts, compact_top_weights, places=places_acccuracy, msg="accuracy btw original & compact simplex differs!")
         self.assertAlmostEqual(orig_top_weigts, reimpl_top_weights, places=places_acccuracy, msg="accuracy btw compact & reimplemented simplex differs!")

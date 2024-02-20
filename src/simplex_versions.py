@@ -53,7 +53,7 @@ def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, dec
     return latent_rep_approx.detach(), weights.detach(), jacobian
 
 
-def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model, softmax=True, regularisation=True):
+def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, softmax=True, regularisation=True):
     scheduler = ExponentialScheduler(x_init=0.1, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS)
     if regularisation:
         reg_factor = REG_FACTOR_INIT
@@ -92,20 +92,12 @@ def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_late
     else:
         latent_rep_approx = weights @ corpus_latents 
 
-    
-    # weights_1_sample = weights_softmax[test_id].numpy() # only single test item out of batch
-    # sort_id = np.argsort(weights_1_sample)[::-1]
-
-    # corpus_decomposition = []
-    # for i in sort_id:
-    #     corpus_decomposition.append((weights_1_sample[i], corpus_inputs[i]))
-
     jacobian = []
     #TODO: detach jacobians too?
     return latent_rep_approx.detach(), weights_softmax.detach(), jacobian
 
     
-def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, model, softmax=True):
+def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, softmax=True):
     size_test = test_latents.shape[0]
     size_corpus = corpus_inputs.shape[0]
     simplex = Simplex_Model(size_corpus, size_test)
@@ -135,9 +127,9 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
 
     latent_rep_approx = simplex(corpus_latents, softmax=softmax) 
 
-    input_baseline = torch.zeros(corpus_inputs.shape)  # also as global parameter? 
+    input_baseline = torch.zeros(corpus_inputs.shape)  #TODO: also as global parameter? 
 
-    jacobian = simplex.get_jacobian(test_id, corpus_inputs, test_latents, input_baseline, model)
+    jacobian = simplex.get_jacobian(test_id, corpus_inputs, test_latents, input_baseline, classifier)
 
     return latent_rep_approx.detach(), weights_softmax.detach(), jacobian
 
@@ -145,7 +137,7 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
 
 class Simplex_Model(torch.nn.Module): #reimplemented
     # idea: do the training done in "fit"-Function of "simplex.py" in an more intuitive way
-    # in original code, they cut down the inputs to only keep the most important corpus examples ("n_keep")while training
+    # in original code, they cut down the inputs to only keep the most important corpus examples ("n_keep") while training
     # here, we train as normal and later set the not important weights to 0
     def __init__(self, size_corpus, size_test):
         super().__init__()

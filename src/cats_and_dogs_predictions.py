@@ -67,7 +67,7 @@ def do_simplex_with_cats_and_dogs(model, corpus_inputs, test_inputs, decompositi
     test_latents =  model.latent_representation(test_inputs[0].detach()).detach()
     corpus_inputs = corpus_inputs[0].detach()
     test_inputs = test_inputs[0].detach()
-    latent_rep_approximations, weights, jacobian = reimplemented_model(model=model,
+    latent_rep_approximations, weights, jacobian = reimplemented_model(classifier=model,
                                                                         corpus_inputs=corpus_inputs,
                                                                         corpus_latents=corpus_latents,
                                                                         test_inputs=test_inputs,
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     decomposition_size = 10
 
-    latent_rep_approximations, weights, jacobian = reimplemented_model(model=model,
+    latent_rep_approximations, weights, jacobian = reimplemented_model(classifier=model,
                                                                         corpus_inputs=corpus_inputs,
                                                                         corpus_latents=corpus_latents,
                                                                         test_inputs=test_inputs,
