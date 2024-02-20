@@ -38,8 +38,8 @@ class Model_Type(enum.Enum):
 
 class Dataset(enum.Enum):
     MNIST = 1
-    #CaN = 2
-    #Heart = 3
+    CaN = 2
+    Heart = 3
 
 
 # code mostly from the toy example from their github page right now,  also referencing use_case.py
@@ -80,6 +80,18 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     # must return classifier, (corpus_data, corpus_latents, corpus_target), (test_data, test_targets, test_latents)
     if dataset is Dataset.MNIST:
         classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
+        #TODO: maybe keep as triples and hand triples to models
+        corpus_data, corpus_target, corpus_latents = corpus
+        test_data, test_targets, test_latents = test_set
+        
+    elif dataset is Dataset.CaN:
+        classifier, corpus, test_set = c.train_or_load_CaN_model(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
+        #TODO: maybe keep as triples and hand triples to models
+        corpus_data, corpus_target, corpus_latents = corpus
+        test_data, test_targets, test_latents = test_set
+        
+    elif dataset is Dataset.Heart:
+        classifier, corpus, test_set = c.train_or_load_heartfailure_model(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
         #TODO: maybe keep as triples and hand triples to models
         corpus_data, corpus_target, corpus_latents = corpus
         test_data, test_targets, test_latents = test_set

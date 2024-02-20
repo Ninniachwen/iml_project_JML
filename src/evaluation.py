@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 import sklearn
+import torch
 
 # directly from original code visualization/images.py
 def plot_mnist(data, title: str = "") -> plt.Figure:
@@ -14,6 +15,23 @@ def plot_mnist(data, title: str = "") -> plt.Figure:
     plt.xticks([])
     plt.yticks([])
     return plt
+    
+#TODO: probably remove to elsewhere
+def plot_most_imp_jacobian(weights, corpus_data, test_data, test_id):
+    most_important_example = weights[test_id].argmax()  # for test example 0
+    fig1 = plot_mnist(test_data[test_id][0], f"Test example {test_id}")
+    fig2 = plot_mnist(corpus_data[most_important_example][0], f"M.i. attribution to example 0 (corpus id {most_important_example})")
+    fig1.show()
+    fig2.show()
+
+    print(f"Biggest contributor to test example 0: {weights[0].argmax()} with weight {weights[0].max()}")
+    print(weights[0])
+
+def plot_jacobians(jacobian:torch.Tensor): #shape 1,28,28
+    fig2 = plot_mnist(jacobian)
+    fig2.show()
+
+    
 
 def r_2_scores(classifier, latent_rep_approx, latent_rep_true, test_data=None, corpus_data=None, weights=None, test_id=0, debugging=False):
     output_approx = classifier.latent_to_presoftmax(latent_rep_approx).detach()
@@ -25,16 +43,9 @@ def r_2_scores(classifier, latent_rep_approx, latent_rep_true, test_data=None, c
                 latent_rep_true, latent_rep_approx.detach().numpy()
             )
     
+    #TODO: remove, including debugging var
     if debugging:
-        #TODO: probably remove to elsewhere
-        most_important_example = weights[test_id].argmax()  # for test example 0
-        fig1 = plot_mnist(test_data[test_id][0], f"Test example {test_id}")
-        fig2 = plot_mnist(corpus_data[most_important_example][0], f"M.i. attribution to example 0 (corpus id {most_important_example})")
-        fig1.show()
-        fig2.show()
-
-        print(f"Biggest contributor to test example 0: {weights[0].argmax()} with weight {weights[0].max()}")
-        print(weights[0])
+        plot_most_imp_jacobian(weights, corpus_data, test_data, test_id)
 
     return output_r2_score, latent_r2_score
 

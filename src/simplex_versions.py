@@ -156,7 +156,8 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
     return latent_rep_approx.detach(), weights.detach(), jacobian
 
 
-
+#TODO: move to models folder
+#TODO: diff btw models and classifiers
 class Simplex_Model(torch.nn.Module):
     """Our reimplemented model. """
     # idea: do the training done in "fit"-Function of "simplex.py" in an more intuitive way
