@@ -66,7 +66,7 @@ class UnitTests(unittest.TestCase):
 
     def test_data_loaders(self):
         # check if all loaders return same format
-        loaders = [c.train_or_load_mnist]#, c.train_or_load_heartfailure_model , c.train_or_load_CaN_model]
+        loaders = [c.train_or_load_mnist, c.train_or_load_heartfailure_model , c.train_or_load_CaN_model]
         types = [MnistClassifier, HeartFailureClassifier, CatsandDogsClassifier]
         for loader in loaders:
             result = loader(random_seed=self.random_seed, cv=0, corpus_size=self.corpus_size, test_size=self.test_size, random_dataloader=False)
