@@ -73,7 +73,7 @@ def train_or_load_CaD_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
 
     picture_files, labels = get_images(test_dir)
     test_set = CandDDataSet(image_paths=picture_files, labels=torch.tensor(labels, dtype=torch.int64))
-    test_loader = DataLoader(test_set, batch_size=200, shuffle=random_dataloader)
+    test_loader = DataLoader(test_set, batch_size=200, shuffle=random_dataloader,random_seed=random_seed)
     (test_data, test_targets) = make_corpus(test_loader, corpus_size=test_size)
     test_data = test_data.detach()
     test_latents = classifier.latent_representation(test_data).detach()
@@ -82,7 +82,7 @@ def train_or_load_CaD_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
     
     picture_files, labels = get_images(corpus_dir)
     corpus_set = CandDDataSet(image_paths=picture_files, labels=torch.tensor(labels, dtype=torch.int64))
-    corpus_loader = DataLoader(corpus_set, batch_size=200, shuffle=random_dataloader)
+    corpus_loader = DataLoader(corpus_set, batch_size=200, shuffle=random_dataloader, random_seed=random_seed)
     (corpus_data, corpus_target) = make_corpus(corpus_loader=corpus_loader, corpus_size=corpus_size)
     corpus_data = corpus_data.detach()
     corpus_latents = classifier.latent_representation(corpus_data).detach()
@@ -104,8 +104,8 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     train_data = HeartFailureDataset(x_train,y_train)
     test_data = HeartFailureDataset(x_test,y_test)
     
-    train_loader = DataLoader(train_data, batch_size=50, shuffle=random_dataloader)
-    test_loader = DataLoader(test_data, batch_size=50, shuffle=random_dataloader)
+    train_loader = DataLoader(train_data, batch_size=50, shuffle=random_dataloader, random_seed=random_seed)
+    test_loader = DataLoader(test_data, batch_size=50, shuffle=random_dataloader, random_seed=random_seed)
 
     (corpus_data, corpus_target) = make_corpus(train_loader, corpus_size=corpus_size)
     (test_data, test_targets) = make_corpus(test_loader, corpus_size=test_size)
