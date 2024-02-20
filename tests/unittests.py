@@ -59,7 +59,7 @@ class UnitTests(unittest.TestCase):
         tests evaluation.py r_2_scores(): check if all loaders return classifier and correct format and types for corpus and test sets.
         """
         print(3*">" + "testing data loader format and type")
-        loaders = [c.train_or_load_mnist]#TODO, c.train_or_load_heartfailure_model , c.train_or_load_CaN_model]
+        loaders = [c.train_or_load_mnist, c.train_or_load_heartfailure_model , c.train_or_load_CaN_model]
         types = [MnistClassifier, HeartFailureClassifier, CatsandDogsClassifier]
         corpus_size = 10
         test_size = 1
@@ -358,10 +358,10 @@ class TestSimplex(unittest.TestCase):
     # does test_size influence simplex performance?
 
 if __name__ == "__main__":
-    unittest.main()
-    #test = UnitTests()
-    #test.setUpClass()
-    #test.test_data_loaders()
+    #unittest.main()
+    test = UnitTests()
+    test.setUpClass()
+    test.test_data_loaders()
 
 
 # execute all tests via console from root dir using

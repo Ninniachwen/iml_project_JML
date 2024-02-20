@@ -105,7 +105,7 @@ class Simplex:
         approx_reps = self.weights @ self.corpus_latent_reps
         return approx_reps
 
-    def decompose(self, test_id: int, return_id: bool = False) -> list or tuple:
+    def decompose(self, test_id: int, return_id: bool = False) -> list|tuple:
         """
         Returns a complete corpus decomposition of the test example identified with test_id
         :param test_id: batch index of the test example
