@@ -97,9 +97,10 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     x,y = load_data(datapath)
     x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.1,random_state=42,shuffle=True)
     classifier = HeartFailureClassifier()
-    if not os.path.isfile(os.path.join(SAVE_PATH, f"model_heartfailure_{cv}.pth")):
-        train_heartfailure_model(classifier, save_path=SAVE_PATH, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
-    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH, f"model_heartfailure_{cv}.pth")))
+    file_w_path = os.path.join(SAVE_PATH, f"model_heartfailure_{cv}.pth")
+    if not os.path.isfile(file_w_path):
+        train_heartfailure_model(classifier, save_path=file_w_path, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
+    classifier.load_state_dict(torch.load(file_w_path))
 
     train_data = HeartFailureDataset(x_train,y_train)
     test_data = HeartFailureDataset(x_test,y_test)

@@ -26,7 +26,7 @@ def load_data(path):
     x = scaler.fit_transform(x)
     return x,y.values
 
-def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test, random_seed=None, epochs=60, lr=0.001):
+def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test, random_seed=None, cv=0, epochs=60, lr=0.001):
     """
     trains the model on the heartfailure predictions dataset
     :param model: NN for predictions
@@ -38,7 +38,7 @@ def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test,
 
     """
     if random_seed:
-        torch.manual_seed(seed=random_seed)
+        torch.manual_seed(seed=random_seed + cv)
 
     optimizer = torch.optim.Adam(params=model.parameters(),lr=lr)
 
