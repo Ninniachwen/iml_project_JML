@@ -74,7 +74,7 @@ def train_or_load_CaN_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
     picture_files, labels = get_images(test_dir)
     test_set = CandDDataSet(image_paths=picture_files, labels=labels)
     test_loader = DataLoader(test_set, batch_size=200, shuffle=True)
-    (test_data, test_targets) = make_corpus(test_loader, corpus_size=10)
+    (test_data, test_targets) = make_corpus(test_loader, corpus_size=test_size)
     test_data = test_data.detach()
     test_latents = classifier.latent_representation(test_data).detach()
 
@@ -109,7 +109,7 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
 
     (corpus_data, corpus_target) = make_corpus(train_loader, corpus_size=corpus_size)
 
-    (test_data, test_targets) = make_corpus(test_loader, corpus_size=corpus_size)
+    (test_data, test_targets) = make_corpus(test_loader, corpus_size=test_size)
 
     corpus_data = corpus_data.detach()
 
