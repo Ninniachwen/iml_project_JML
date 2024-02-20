@@ -16,8 +16,8 @@ import src.simplex_versions as s
 import src.classifier_versions as c
 import src.main as m
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
-from src.Models.CatsAndDogsModel import CatsandDogsClassifier
-from src.Models.HeartfailureModel import HeartFailureClassifier
+from src.models.CatsAndDogsModel import CatsandDogsClassifier
+from src.models.HeartfailureModel import HeartFailureClassifier
 
 class UnitTests(unittest.TestCase):
 
@@ -68,8 +68,10 @@ class UnitTests(unittest.TestCase):
         # check if all loaders return same format
         loaders = [c.train_or_load_mnist, c.train_or_load_heartfailure_model , c.train_or_load_CaN_model]
         types = [MnistClassifier, HeartFailureClassifier, CatsandDogsClassifier]
+        corpus_size = 10
+        test_size = 1
         for loader in loaders:
-            result = loader(random_seed=self.random_seed, cv=0, corpus_size=self.corpus_size, test_size=self.test_size, random_dataloader=False)
+            result = loader(random_seed=self.random_seed, cv=0, corpus_size=corpus_size, test_size=test_size, random_dataloader=False)
 
             # base shape: triple
             self.assertEqual(len(result), 3, f"loader {loader} does not return a triple!")
@@ -82,47 +84,49 @@ class UnitTests(unittest.TestCase):
             # corpus triple shapes & types
             self.assertTrue(
                 (type(result[1][0]) == torch.Tensor) 
-                & (len(result[1][0]) == self.corpus_size )
+                & (len(result[1][0]) == corpus_size )
                 & (result[1][0].dtype == torch.float32), 
-                f"Corpus triple should contain a float32 tensor of length {self.corpus_size} as first item.\
+                f"Corpus triple should contain a float32 tensor of length {corpus_size} as first item.\
                 got {type(result[1][0])}, {len(result[1][0])}, {result[1][0].dtype}")
             self.assertTrue(
                 (type(result[1][1]) == torch.Tensor) 
-                & (list(result[1][1].shape) == [self.corpus_size] )
+                & (list(result[1][1].shape) == [corpus_size] )
                 & (result[1][1].dtype == torch.int64), 
-                f"Corpus triple should contain a int64 tensor of shape [{self.corpus_size}] as second item.\
+                f"Corpus triple should contain a int64 tensor of shape [{corpus_size}] as second item.\
                 got {type(result[1][1])}, {list(result[1][1].shape)}, {result[1][1].dtype}")
             self.assertTrue(
                 (type(result[1][2]) == torch.Tensor) 
-                & (len(result[1][2]) == self.corpus_size )
+                & (len(result[1][2]) == corpus_size )
                 & (result[1][2].dtype == torch.float32), 
-                f"Corpus triple should contain a float32 tensor of length {self.corpus_size} as third item.\
+                f"Corpus triple should contain a float32 tensor of length {corpus_size} as third item.\
                 got {type(result[1][2])}, {len(result[1][2])}, {result[1][2].dtype}")
 
             # test triple shapes & types
             self.assertTrue(
                 (type(result[2][0]) == torch.Tensor) 
-                & (len(result[2][0]) == self.test_size )
+                & (len(result[2][0]) == test_size )
                 & (result[2][0].dtype == torch.float32), 
-                f"Test triple should contain a float32 tensor of length {self.test_size} as first item.\
+                f"Test triple should contain a float32 tensor of length {test_size} as first item.\
                 got {type(result[2][0])}, {len(result[2][0])}, {result[2][0].dtype}")
             self.assertTrue(
                 (type(result[2][1]) == torch.Tensor) 
-                & (list(result[2][1].shape) == [self.test_size] )
+                & (list(result[2][1].shape) == [test_size] )
                 & (result[2][1].dtype == torch.int64), 
-                f"Test triple should contain a int64 tensor of shape [{self.test_size}] as second item.\
+                f"Test triple should contain a int64 tensor of shape [{test_size}] as second item.\
                 got {type(result[2][1])}, {list(result[2][1].shape)}, {result[2][1].dtype}")
             self.assertTrue(
                 (type(result[2][2]) == torch.Tensor) 
-                & (len(result[2][2]) == self.test_size )
+                & (len(result[2][2]) == test_size )
                 & (result[2][2].dtype == torch.float32), 
-                f"Test triple should contain a float32 tensor of length {self.test_size} as third item.\
+                f"Test triple should contain a float32 tensor of length {test_size} as third item.\
                 got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")
             
 
-    # edge cases für input var (testset > corpus)
+    # edge cases für input var (testid > testset)
 
     # exceptions
+            
+    # test make_corpus
         
     #TODO: test random seed for classifier or simplex model?
 

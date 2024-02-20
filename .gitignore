@@ -117,15 +117,15 @@ dmypy.json
 .idea
 
 # Simplex
-Original_code/experiments/data/*
-Original_code/src/simplexai/experiments/data/*
-Original_code/src/simplexai/experiments/time_series_toy.py
-Original_code/data/*
-Original_code/notebooks/*
-!Original_code/notebooks/*.ipynb
-Original_code/example_similarity/*
+original_code/experiments/data/*
+original_code/src/simplexai/experiments/data/*
+original_code/src/simplexai/experiments/time_series_toy.py
+original_code/data/*
+original_code/notebooks/*
+!original_code/notebooks/*.ipynb
+original_code/example_similarity/*
 */archived*
-Original_code/data
+original_code/data
 *.pth
 *.pkl
 *.pdf
