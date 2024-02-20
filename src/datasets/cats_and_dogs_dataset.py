@@ -5,6 +5,8 @@ from torchvision.transforms import v2
 
 LABEL ={"cats" : 0, "dogs" : 1}
 
+# three data augmentations are provided. For training use augment_image for validation do transform_validate, for testing use transforms_normal.
+
 transform_normal = v2.Compose([   
     v2.ToImage(),
     v2.Resize((150, 150)),
@@ -31,10 +33,12 @@ augment_image = v2.Compose([
 
 
 class CandDDataSet(Dataset):
-    def __init__(self, image_paths, labels, subset_size=None, transform=transform_normal):
+    """
+    Cats and dogs dataset class. 
+    """
+    def __init__(self, image_paths, labels, transform=transform_normal):
         self.image_paths = image_paths
         self.labels = labels
-        self.subset_size = subset_size
         self.transform = transform
 
     def __len__(self):
