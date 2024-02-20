@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 import matplotlib.pyplot as plt
 
-from src.models.CatsAndDogsModel import CatsandDogsClassifier
+from src.Models.CatsAndDogsModel import CatsandDogsClassifier
 from src.utils.image_finder_cats_and_dogs import get_images
 from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate, LABEL
 
@@ -12,10 +12,8 @@ from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, tran
 
 def train_model(
         save_path: Path,
-        device: torch.device,
-        train_dir: Path,
-        test_dir: Path,
-        n_epoch: int = 110,
+        cv: int,
+        n_epoch: int = 60,
         batch_size_train: int = 128,
         batch_size_test: int = 128,
         batch_size_val: int = 128,
@@ -28,6 +26,9 @@ def train_model(
     torch.random.manual_seed(random_seed)
     torch.backends.cudnn.enabled = False
     
+    train_dir = r"data\Animal Images\train"
+    test_dir = r"data\Animal Images\test"
+
     picture_files, labels = get_images(train_dir)
 
     val_split = int(val_split*len(picture_files))
@@ -54,7 +55,6 @@ def train_model(
 
     
     model = CatsandDogsClassifier()
-    model.to(device)
 
     optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate,)
 
@@ -74,8 +74,6 @@ def train_model(
 
             optimizer.zero_grad()
 
-            data = data.to(device) 
-            target = target.to(device)
             target = target.to(torch.float32)      
             output = model(data)
             output = output.squeeze()
@@ -98,8 +96,6 @@ def train_model(
         with torch.no_grad():
             for data,target in val_loader:
 
-                data = data.to(device)
-                target = target.to(device)
                 target = target.to(torch.float32)
 
                 output = model(data)
@@ -124,8 +120,6 @@ def train_model(
         with torch.no_grad():
             for data,target in test_loader:
 
-                data = data.to(device)
-                target = target.to(device)
                 target = target.to(torch.float32)
 
                 output = model(data)
@@ -144,30 +138,12 @@ def train_model(
 
     test()
     epoch=0
-    torch.save(optimizer.state_dict(), f"{save_path}_Testacc_{test_accs[-1]}_Epoch_{epoch}.pth")
     for epoch in range(1,n_epoch+1):
         train(epoch)
         validate()
         scheduler.step(val_losses[-1])
-        if epoch % 20 == 0:
-            torch.save(optimizer.state_dict(), f"{save_path}_ValAcc_{val_accs[-1]}_Epoch_{epoch}.pth")
     test() 
     
-    torch.save(optimizer.state_dict(), f"{save_path}_ValAcc_{val_accs[-1]}_TestAcc_{test_accs[-1]}_fin.pth")
+    torch.save(optimizer.state_dict(), save_path)
     return model
 
-            
-
-def main():
-    train_dir = r"data\Animal Images\train"
-    test_dir = r"data\Animal Images\test"
-    save_path = r"results\models\model_catsanddogs"
-    if torch.cuda.is_available():
-        device=torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-    train_model(save_path=save_path, device=device, train_dir=train_dir, test_dir=test_dir)
-
-
-if __name__ == "__main__":
-    main()

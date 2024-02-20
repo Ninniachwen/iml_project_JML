@@ -7,6 +7,7 @@ import numpy as np
 import os
 import torch
 import sys
+import argparse
 
 #TODO: check if requirements file is sufficient
 
@@ -23,12 +24,16 @@ import src.classifier_versions as c
 RANDOM_SEED=42
 
 class Model_Type(enum.Enum):
-    ORIGINAL = 1
-    ORIGINAL_COMPACT = 2
-    REIMPLEMENTED = 3
-    R_NO_SOFTMAX = 4
-    O_C_NO_SOFTMAX = 5
-    O_C_NO_REGULIZATION = 6
+    ORIGINAL = 1  # use original model grom github repository
+    ORIGINAL_COMPACT = 2  # use original code which was rewritten to fit in one function
+    REIMPLEMENTED = 3  # use reimplemented model
+    R_NO_SOFTMAX = 4  # use reimplemented model but without softmax layer during training (for ablation)
+    R_NORMALIZE = 5  # use reimplemented model but using a normalization layer during training (for ablation)
+    R_INIT_WEIGHTS_RANDOM = 6 # use reimplemented model but use set initial weights with random values (for ablation)
+    R_NO_SOFTMAX_IWR = 7  # like R_NO_SOFTMAX but use set initial weights with random values (for ablation)
+    R_NORMALIZE_IWR = 8  # like R_NORMALIZE but use set initial weights with random values (for ablation)
+    O_C_NO_SOFTMAX = 9  # use compact original (ORIGINAL_COMPACT) but without softmax layer during training (for ablation)
+    O_C_NO_REGULIZATION = 10  # use condensed original (ORIGINAL_COMPACT) but use no regularization during training (for ablation)
 
 
 class Dataset(enum.Enum):
@@ -103,9 +108,26 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         print(f"Starting on cv {cv} with our own reimplemented model!")
         latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier)
     
+    elif model_type is Model_Type.R_NORMALIZE:
+        print(f"Starting on cv {cv} with the compact original model but using normalize instead of softmax layer!")
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, mode="normalize")
+        
     elif model_type is Model_Type.R_NO_SOFTMAX:
-        print(f"Starting on cv {cv} with our own reimplemented model but without using softmax layer while training!")
-        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, softmax=False)
+        print(f"Starting on cv {cv} with our own reimplemented model but without using softmax layer!")
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, mode="nothing")
+
+    elif model_type is Model_Type.R_INIT_WEIGHTS_RANDOM:
+        print(f"Starting on cv {cv} with our own reimplemented model but initializing weights at random!")
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, weight_init_zero=False)
+    
+    elif model_type is Model_Type.R_NO_SOFTMAX_IWR:
+        print(f"Starting on cv {cv} with the compact original model but using normalize instead of softmax layer and initializing weights at random!")
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, mode="normalize", weight_init_zero=False)
+        
+    elif model_type is Model_Type.R_NORMALIZE_IWR:
+        print(f"Starting on cv {cv} with our own reimplemented model but without using softmax layer and initializing weights at random!")
+        latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, mode="nothing", weight_init_zero=False)
+        
 
     else:
         raise Exception(f"'{model_type}' is no valid input for model_type")
@@ -237,16 +259,16 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
     return weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions
 
 def run_ablation():
-    # test different combinations (360 diff combinations)
+    """Run the different models for different combinations of corpus size, test size, decomposition size, seeding (cv) and test_id"""
+    # testing 540 combinations
+    print("Run ablation study.")
     corpus_size = [50, 100]
-    test_size = [5, 10]
-    decomposition_size = [3, 5, 10, 50, 100]
-    cv = [0,1,2]
-    test_id = [0] # only relevant for jacobians
+    test_size = [10, 50]
+    decomposition_size = [5, 10, 50, 100]
+    cv = [0,1]
+    test_id = [0,1]
     for c in corpus_size:
         for t in test_size:
-            if t > c:
-                continue
             for d in decomposition_size:
                 if d > c:
                     continue
@@ -268,21 +290,19 @@ def run_original_experiment():
             return
 
 if __name__ == "__main__":
-    # training mnist, from minst.py
-    # weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
-    #     model_type=Model_Type.REIMPLEMENTED, 
-    #     dataset=Dataset.MNIST, 
-    #     cv=0,
-    #     corpus_size=100, 
-    #     test_size=10, 
-    #     decompostion_size=3, 
-    #     test_id=0, print_jacobians=True)
-    # print(latent_r2_score)
-
-
-    #run_all_experiments(corpus_size=100, test_size=10, decomposition_size=100)
-    #run_ablation()
-    run_original_experiment()
+    parser = argparse.ArgumentParser(description="TODO!")
+    parser.add_argument(
+        "-ablation",
+        action="store_true",
+        help="Run the tests for the ablation study and save it \"/files/ablation_results.csv\"",
+    )
+    args = parser.parse_args()
+    print(args)
+    if args.ablation:
+        run_ablation()
+    else:
+        parser.print_help()
+        parser.exit()
 
     print("Done")
     #TODO: join test_set into corpus and see what happens
