@@ -10,7 +10,6 @@ from pathlib import Path
 #TODO: check if requirements file is sufficient
 
 sys.path.insert(0, "")
-
 import src.evaluation as e
 import src.simplex_versions as s
 import src.classifier_versions as c
@@ -19,6 +18,9 @@ from src.utils.utlis import create_input_baseline, print_jacobians_with_img
 RANDOM_SEED=42
 
 class Model_Type(enum.Enum):
+    """
+    List of possible simplex models. This defines what model is used and what settings are set (like softmax, normalize, no regularization, ...)
+    """
     ORIGINAL = 1  # use original model grom github repository
     ORIGINAL_COMPACT = 2  # use original code which was rewritten to fit in one function
     REIMPLEMENTED = 3  # use reimplemented model
@@ -30,18 +32,13 @@ class Model_Type(enum.Enum):
     O_C_NO_SOFTMAX = 9  # use compact original (ORIGINAL_COMPACT) but without softmax layer during training (for ablation)
     O_C_NO_REGULIZATION = 10  # use condensed original (ORIGINAL_COMPACT) but use no regularization during training (for ablation)
 
-
 class Dataset(enum.Enum):
+    """
+    Datasets that can be used in this setup. Each dataset comes with a classifier and dataloader.
+    """
     MNIST = 1
     CaN = 2
     Heart = 3
-
-
-# code mostly from the toy example from their github page right now,  also referencing use_case.py
-
-# when using another dataset, we also have to replace load_minst (with our custom loader) and MnistClassifier (maybe with another pretrained model)
-
-# for this to work right now you have to follow the install instructions of the original repo
 
 
 def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_scores=True, decompose=True, random_dataloader=True) -> tuple[torch.Tensor, None|list[float], None|list[float], None|torch.Tensor, None|list[dict]]:
@@ -163,6 +160,21 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
 
 
 def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, no_ablation=False) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:
+    """_summary_
+
+    Args:
+        corpus_size (int, optional): How many images to use for corpus (explainer images). Defaults to 100.
+        test_size (int, optional): How many images to use for test_set (images that will be explained, using corpus). Defaults to 10.
+        decomposition_size (int, optional): Top x images to be chosen from corpus to create the final decomposition (expanation). Also influences regularization and weights. Defaults to 3.
+        cv (int, optional): is added to random seed 42, to run experiments with different random seeds. used as identifier for stored models. Defaults to 0.
+        test_id (int, optional): test image to choose from test set when prints are done. eg for jacobians. Defaults to 0.
+        filename (str, optional): filename to use for the results of this round of experiments. Defaults to "comparison_results.csv".
+        random_dataloader (bool, optional): Whether samples random images or the same images in each run. Defaults to False.
+        no_ablation (bool, optional): Whether the models which were created for the ablation study are used. if False, only first three are used: original, compact and reimplemented. Defaults to False.
+
+    Returns:
+        tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]: returns weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions. 
+    """
     print(f"   starting test runs with parameters:\n   corpus_size: {corpus_size}, test_size: {test_size}, decomposition_size: {decomposition_size}, cv: {cv}, test_id: {test_id}\n")
               
     weights_all = []
@@ -273,8 +285,9 @@ def run_ablation():
 
 
 def run_original_experiment():
-    # MNIST Approximation Quality Experiment
-    # as in approximation_quality in original simplex
+    """
+    MNIST Approximation Quality Experiment as in paper and approximation_quality in original simplex
+    """
     decomposition_size = [3, 5, 10, 20, 50]
     cv = range(0,10) # the results from the paper were obtained by taking all integer CV between 0 and 9
     for d in decomposition_size:
