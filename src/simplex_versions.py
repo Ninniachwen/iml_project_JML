@@ -14,7 +14,30 @@ REG_FACTOR_INIT  = 0.1
 REG_FACTOR_FINAL = 100
 EPOCHS = 10000
 
-def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:  # Jasmin
+def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    The original simplex model: it trains the model and creates jacobians.
+
+    Args:
+        corpus_inputs (torch.Tensor): Feature vector of Corpus examples
+        corpus_latents (torch.Tensor): Latent representations of Corpus examples, run through according blackbox model
+        test_data (torch.Tensor): Feature vector of Test examples (not used, but given as argument to keep function calls the same)
+        test_latents (torch.Tensor): Latent representations of Test examples, run through according model
+        decompostion_size (int): with how many corpus examples a test example should be explained
+        test_id (int): for which Test example the jacobians should be printed
+        classifier (_type_): the original blackbox model (only needed for jacobians)
+        input_baseline (torch.Tensor): background for jacobian projections
+        softmax (bool, optional): #TODO:_description_. Defaults to True.
+        regularisation (bool, optional): #TODO:_description_. Defaults to True.
+        mode: "softmax", "normalize" or "nothing"; diffenrent modes for training the simplex model; used for ablation study
+        weight_init_zero: bool; used for ablation study
+
+    Returns:
+        tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            1. latent_rep_approx: the latent representations learned by the 2. simplex model; used for r2 score
+            3. weights_softmax: the (softmaxed) weights of the learned simplex model
+            4. jacobian: the jacobians for the given test id
+    """
     reg_factor_scheduler = ExponentialScheduler(REG_FACTOR_INIT, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS)
     simplex = Simplex(corpus_examples=corpus_inputs,
             corpus_latent_reps=corpus_latents)
@@ -36,7 +59,28 @@ def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, dec
     return latent_rep_approx.detach(), weights.detach(), jacobian.detach()
 
 
-def compact_original_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor, test_inputs:torch.Tensor, test_latents:torch.Tensor, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor, softmax=True, regularisation=True) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+def compact_original_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor, test_data:torch.Tensor, test_latents:torch.Tensor, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor, softmax=True, regularisation=True) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    In this method the original Simplex model is collected into a single method (and one helper method below). This simplifies the ablation study. Othewise it works just like Simplex. This method trains the model and creates jacobians        
+
+    Args:
+        corpus_inputs (torch.Tensor): Feature vector of Corpus examples
+        corpus_latents (torch.Tensor): Latent representations of Corpus examples, run through according blackbox model
+        test_data (torch.Tensor): Feature vector of Test examples (not used, but given as argument to keep function calls the same)
+        test_latents (torch.Tensor): Latent representations of Test examples, run through according model
+        decompostion_size (int): with how many corpus examples a test example should be explained
+        test_id (int): for which Test example the jacobians should be printed
+        classifier (_type_): the original blackbox model (only needed for jacobians)
+        input_baseline (torch.Tensor): background for jacobian projections
+        softmax (bool, optional): #TODO:_description_. Defaults to True.
+        regularisation (bool, optional): #TODO:_description_. Defaults to True.
+
+    Returns:
+        tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            1. latent_rep_approx: the latent representations learned by the 2. simplex model; used for r2 score
+            3. weights_softmax: the (softmaxed) weights of the learned simplex model
+            4. jacobian: the jacobians for the given test id
+    """
     scheduler = ExponentialScheduler(x_init=0.1, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS)
     if regularisation:
         reg_factor = REG_FACTOR_INIT
@@ -107,25 +151,30 @@ def compact_jacobian_projections(corpus_inputs:torch.Tensor, corpus_latents:torc
     return jacobian_projections
 
     
-def reimplemented_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor, test_inputs:torch.Tensor, test_latents:torch.Tensor, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor, mode="softmax", weight_init_zero=True) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Train our reimplemented simplex model.
+def reimplemented_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor, test_data:torch.Tensor, test_latents:torch.Tensor, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor, mode="softmax", weight_init_zero=True) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Our reimplemented simplex model: it trains the model and creates jacobians.
 
-    Parameters:
-        corpus_inputs: Feature vector of Corpus examples
-        corpus_latents: Latent representations of Corpus examples, run through according blackbox model
-        test_inputs: Feature vector of Test examples (not used, but given as argument to keep function calls the same)
-        test_latents: Latent representations of Test examples, run through according model
-        decompostion_size: int; with how many corpus examples a test example should be explained
-        test_id: int; for which Test example the jacobians should be returned
-        classifier: the original blackbox model (only needed for jacobians)
+    Args:
+        corpus_inputs (torch.Tensor): Feature vector of Corpus examples
+        corpus_latents (torch.Tensor): Latent representations of Corpus examples, run through according blackbox model
+        test_data (torch.Tensor): Feature vector of Test examples (not used, but given as argument to keep function calls the same)
+        test_latents (torch.Tensor): Latent representations of Test examples, run through according model
+        decompostion_size (int): with how many corpus examples a test example should be explained
+        test_id (int): for which Test example the jacobians should be printed
+        classifier (_type_): the original blackbox model (only needed for jacobians)
+        input_baseline (torch.Tensor): background for jacobian projections
+        softmax (bool, optional): #TODO:_description_. Defaults to True.
+        regularisation (bool, optional): #TODO:_description_. Defaults to True.
         mode: "softmax", "normalize" or "nothing"; diffenrent modes for training the simplex model; used for ablation study
         weight_init_zero: bool; used for ablation study
-    
+
     Returns:
-        latent_rep_approx: the latent representations learned by the simplex model; used for r2 score
-        weights_softmax: the (softmaxed) weights of the learned simplex model
-        jacobian: the jacobians for the given test id
-        """
+        tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            1. latent_rep_approx: the latent representations learned by the 2. simplex model; used for r2 score
+            3. weights_softmax: the (softmaxed) weights of the learned simplex model
+            4. jacobian: the jacobians for the given test id
+    """
     size_test = test_latents.shape[0]
     size_corpus = corpus_inputs.shape[0]
     simplex = Simplex_Model(size_corpus, size_test, weight_init_zero=weight_init_zero)

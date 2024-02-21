@@ -318,19 +318,13 @@ if __name__ == "__main__":
         run_all_experiments(no_ablation=True)
         parser.print_help()
         parser.exit()
-
     print("Done")
+
     #TODO: join test_set into corpus and see what happens
    
-    # TODO: more seeding, values are slightly of each time of run (original and own)
-    # TODO  sanity check: is our model "too good"? should be do something even easier than 1 conv layer? 
     # TODO: deal with different "to_keep" values of weights, alter funciton -> check exactly what is done with them in fit-method of simplex.py
-    # TODO: introduce jacobian projection: but how to test ??
-    # TODO: generalize simplex_model to not only work für mnist--> done
     # TODO: introduce plotting; later: maybe add own model score to their plot (with the nearest neighbors?)
-    # TODO: do own mnist classifier and train it in our own way? that will probably be some work. is it necessary?
-    # TODO: clean up code, obviously
     # TODO: plot the according pictures to get a better understanding
+    # TODO: do own mnist classifier and train it in our own way? that will probably be some work. is it necessary? ->no(ML)
 
-    # next steps (after the one above):
-    # other dataset, ablation etc.
+    # TODO: clean up code, obviously

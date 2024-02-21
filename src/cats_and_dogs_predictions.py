@@ -80,7 +80,7 @@ if __name__ == "__main__":
     latent_rep_approximations, weights, jacobian = reimplemented_model(classifier=model,
                                                                         corpus_inputs=corpus_inputs,
                                                                         corpus_latents=corpus_latents,
-                                                                        test_inputs=test_inputs,
+                                                                        test_data=test_inputs,
                                                                         test_latents=test_latents,
                                                                         decompostion_size=decomposition_size,
                                                                         test_id=test_id)
