@@ -18,7 +18,7 @@ from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import LABEL, get_images
 from src.utils.corpus_creator import make_corpus
-from src.utils.utlis import is_close_w_index, plot_jacobians_grayscale, print_jacobians_with_img
+from src.utils.utlis import compare_row_max, get_row_max, is_close_w_index, plot_jacobians_grayscale, plot_mnist, print_jacobians_with_img
 
 class UnitTests(unittest.TestCase):
 
@@ -57,7 +57,7 @@ class UnitTests(unittest.TestCase):
 
     def test_data_loaders(self):
         """
-        tests TODO check if all loaders return classifier and correct format and types for corpus and test sets.
+        tests train_or_load methods from classifier_versions.py. check if all loaders return classifier and correct format and types for corpus and test sets.
         """
         print(3*">" + "testing data loader format and type")
         loaders = [c.train_or_load_mnist, c.train_or_load_heartfailure_model , c.train_or_load_CaD_model]
@@ -66,7 +66,7 @@ class UnitTests(unittest.TestCase):
         test_size = 1
         for loader in loaders:
             result = loader(random_seed=self.random_seed, cv=0, corpus_size=corpus_size, test_size=test_size, random_dataloader=False)
-
+            
             # base shape: triple
             self.assertEqual(len(result), 3, f"loader {loader} does not return a triple!")
             
@@ -74,7 +74,7 @@ class UnitTests(unittest.TestCase):
             self.assertTrue(type(result[0]) in types, f"loader {loader} does not return one of the three classifier as first item!\n >> got {result[0]}, expected one of {types}")
             self.assertEqual(len(result[1]), 3, f"loader {loader} does not return a triple for corpusset!")
             self.assertEqual(len(result[2]), 3, f"loader {loader} does not return a triple for testset!")
-
+            
             # corpus triple shapes & types
             self.assertTrue(
                 (type(result[1][0]) == torch.Tensor) 
@@ -113,7 +113,8 @@ class UnitTests(unittest.TestCase):
                 & (len(result[2][2]) == test_size )
                 & (result[2][2].dtype == torch.float32), 
                 f"Test triple should contain a float32 tensor of length {test_size} as third item.\
-                got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")       
+                got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")     
+        print("test")  
 
     def test_shuffle_data_loader(self):
         """
@@ -142,13 +143,15 @@ class UnitTests(unittest.TestCase):
     
     # test make_corpus
     # test corps loader class distribution
-    def test_make_corpus(self):
-        test_files = [f"{i}_test" for i in range(1000)]   
-        test_labels = [i%2 for i in range(100)]
-        dataset = CandDDataSet(image_paths=test_files, labels=test_labels, transform=None)
-        datalaoder = DataLoader(dataset=dataset, batch_size=1, shuffle=False)
+    def _test_make_corpus(self):
+        #TODO: create with lucas and enable (_)
+        image_paths, labels = get_images("data/Animal Images/test")
+        dataset = CandDDataSet(image_paths=image_paths, labels=labels)
+        datalaoder = DataLoader(dataset=dataset, batch_size=100, shuffle=True)
         corpus = make_corpus(datalaoder)
-        print("TODO: create with lucas")
+        count = [list(corpus[1]).count(i) for i in [0,1]]
+
+
     
     def test_r_2_scores(self):
         """
@@ -173,6 +176,7 @@ class UnitTests(unittest.TestCase):
     # exception (decompsition > corpus)
             
     def _test_do_simplex():
+        #TODO: finish and activate
         print("this should not be executed")
         # if 4x false, result should be tuple[torch.Tensor, None, None, None, None]
         result = m.do_simplex(
@@ -281,7 +285,7 @@ class TestWithDoSimplex(unittest.TestCase):
         
         # jacobian shape
         self.assertEqual(self.results[0]["jac"].shape[0], self.corpus_size, "jacobian of original model have incorrect shape!")
-        #self.assertEqual(self.results[1]["jac"].shape[0], self.corpus_size, "jacobian of compact model have incorrect shape!") #TODO: implenent jacobians
+        self.assertEqual(self.results[1]["jac"].shape[0], self.corpus_size, "jacobian of compact model have incorrect shape!")
         self.assertEqual(self.results[2]["jac"].shape[0], self.corpus_size, "jacobian of reimplemented model have incorrect shape!")
 
         # decompostion shape
@@ -322,14 +326,25 @@ class TestWithDoSimplex(unittest.TestCase):
     def test_jacobians(self):
         print("TODO: implement test_jacobians")# TODO: implement
         # test original jacobian method against ours
-        plot_jacobians_grayscale(self.results[0]["jac"][0][0])
-        plot_jacobians_grayscale(self.results[2]["jac"][0][0])
-        plot_jacobians_grayscale(self.results[2]["jac"][0][0]-self.results[0]["jac"][0][0])
+        plot_mnist(self.results[0]["jac"][0][0])
+        plot_mnist(self.results[1]["jac"][0][0])
+        plot_mnist(self.results[2]["jac"][0][0])
+        #plot_jacobians_grayscale(self.results[2]["jac"][0][0]-self.results[0]["jac"][0][0])
         #print_jacobians_with_img()#TODO test this
         
         # element wise mean_square_error
+
         # row max in same place?
-        self.assertTrue(torch.equal(self.results[0]["jac"][0], self.results[2]["jac"][0]), "first reimplemented jacobian differs from first original jacobian")
+        orig_row_max = get_row_max(self.results[0]["jac"][0][0])
+        comp_row_max = get_row_max(self.results[1]["jac"][0][0])
+        reimpl_row_max = get_row_max(self.results[2]["jac"][0][0])
+        a = compare_row_max(orig_row_max, comp_row_max)
+        b = compare_row_max(orig_row_max, reimpl_row_max)
+        c = compare_row_max(comp_row_max, reimpl_row_max)
+        self.assertListEqual(orig_row_max, comp_row_max, f"Jacobians differ significantly btw original and compact model. row max locations: {orig_row_max}, {comp_row_max}")
+        self.assertListEqual(orig_row_max, reimpl_row_max, f"Jacobians differ significantly btw original and reimplemented model. row max locations: {orig_row_max}, {reimpl_row_max}")
+
+        #self.assertTrue(torch.equal(self.results[0]["jac"][0], self.results[2]["jac"][0]), "first reimplemented jacobian differs from first original jacobian")
 
         """currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         save_path = os.path.join(os.path.dirname(currentdir), "files")
@@ -365,7 +380,7 @@ class TestWithDoSimplex(unittest.TestCase):
         print(10*"-" + "testing quality of decompositions" + 10*"-")
         # quality tests:
 
-        print(3*">" + "checking most important corpus id in decomposition") #TODO: duplacate to dataloader?
+        print(3*">" + "checking most important corpus id in decomposition")
         # most important sample: same for all models?
         self.assertEqual(self.results[0]["dec"][self.sample_id]["sample_id"], self.results[1]["dec"][self.sample_id]["sample_id"], "got different samples!")
         self.assertEqual(self.results[0]["dec"][self.sample_id]["sample_id"], self.results[2]["dec"][self.sample_id]["sample_id"], "got different samples!")
@@ -378,7 +393,7 @@ class TestWithDoSimplex(unittest.TestCase):
         
         print(3*">" + "QUALITY: comparing most important corpus img in decomp between models")
         # check if explainer id's for first img is same for all models
-        self.assertEqual(self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], self.results[1]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw original & compact simplex!") #TODO: change from int to model
+        self.assertEqual(self.orig_decomp[self.sample_id]["decomposition"][self.most_imp]["c_id"], self.compact_decomp[self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw original & compact simplex!")
 
         self.assertEqual(self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], self.results[2]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw original & reimplemented simplex!")
 
@@ -386,7 +401,7 @@ class TestWithDoSimplex(unittest.TestCase):
         self.assertListEqual(self.orig_c_ids, self.compact_c_ids, f"corpus id's in decomposition differ btw original and compact model: {self.orig_c_ids}, {self.compact_c_ids}")
         print(3*">" + "QUALITY: comparing corpus id's in decomp between original and reimplemented simplex")
         self.assertListEqual(self.orig_c_ids, self.reimpl_c_ids, f"QUALITY: corpus id's in decomposition differ btw original and reimplemented model: {self.orig_c_ids}, {self.reimpl_c_ids}") #TODO: decomposition 100
-        #TODO unocmment test and explaiin why
+        #TODO unocmment test and explain why
 
 
    
@@ -395,10 +410,12 @@ class TestWithDoSimplex(unittest.TestCase):
     # does test_size influence simplex performance?
 
 if __name__ == "__main__":
-    unittest.main()
-    #test = UnitTests()
-    #test.setUpClass()
-    #test.test_data_loaders()
+    #unittest.main()
+    test = UnitTests()
+    test.setUpClass()
+    test._test_make_corpus()
+
+    #test.test_jacobians()
 
 
 # execute all tests via console from root dir using

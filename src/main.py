@@ -1,9 +1,9 @@
 import argparse
 import csv
-import datetime
 import enum
 import inspect
 import os
+from time import strftime
 import torch
 import sys
 from pathlib import Path
@@ -37,13 +37,14 @@ class Dataset(enum.Enum):
     Datasets that can be used in this setup. Each dataset comes with a classifier and dataloader.
     """
     MNIST = 1
-    CaN = 2
-    Heart = 3
+    #CaN = 2
+    #Heart = 3
+    #TODO: enable other models
 
 
 def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_scores=True, decompose=True, random_dataloader=True) -> tuple[torch.Tensor, None|list[float], None|list[float], None|torch.Tensor, None|list[dict]]:
-    """ #TODO: aktualisieren
-    Decide if we want to train our Simplex model the original or the new implemented way
+    """
+    Decide which simplex model we want to train with which dataset.
 
     Parameters:
         model_type (enum|int): ORIGINAL = 1, REIMPLEMENTED = 2, NO_REGULARIZATION = 3, TORCH_CONV = 4
@@ -73,19 +74,16 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     # must return classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents)
     if dataset is Dataset.MNIST:
         classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
-        #TODO: maybe keep as triples and hand triples to models
         corpus_data, corpus_target, corpus_latents = corpus
         test_data, test_targets, test_latents = test_set
         
     elif dataset is Dataset.CaN:
         classifier, corpus, test_set = c.train_or_load_CaD_model(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
-        #TODO: maybe keep as triples and hand triples to models
         corpus_data, corpus_target, corpus_latents = corpus
         test_data, test_targets, test_latents = test_set
         
     elif dataset is Dataset.Heart:
         classifier, corpus, test_set = c.train_or_load_heartfailure_model(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
-        #TODO: maybe keep as triples and hand triples to models
         corpus_data, corpus_target, corpus_latents = corpus
         test_data, test_targets, test_latents = test_set
     
@@ -175,7 +173,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
     Returns:
         tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]: returns weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions. 
     """
-    print(f"   starting test runs with parameters:\n   corpus_size: {corpus_size}, test_size: {test_size}, decomposition_size: {decomposition_size}, cv: {cv}, test_id: {test_id}\n")
+    print(f"   starting test runs with parameters:\n   corpus_size: {corpus_size}, test_size: {test_size}, decomposition_size: {decomposition_size}, cv: {cv}, test_id: {test_id}")
               
     weights_all = []
     latent_r2_scores = []
@@ -239,7 +237,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                 corpus_ids = [dec_c[i]["c_id"] for i in range(decomposition_size)]
                 corpus_weights = [dec_c[i]["c_weight"] for i in range(decomposition_size)]
                 corpus_targest = [dec_c[i]["c_target"] for i in range(decomposition_size)]
-                time_stamp = datetime.strftime("%Y-%m-%d-%H:%M:%S")
+                time_stamp = strftime("%Y-%m-%d-%H:%M:%S")
                 writer.writerow([
                     time_stamp, 
                     corpus_size, 
@@ -297,7 +295,7 @@ def run_original_experiment():
             return
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="TODO!")
+    parser = argparse.ArgumentParser(description="These arguments determine which set of experiments is executed.")
     parser.add_argument(
         "-ablation",
         action="store_true",

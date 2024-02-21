@@ -110,7 +110,7 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     datapath = r"data\heart.csv"
 
     x,y = load_data(datapath)
-    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=42, shuffle=True)
+    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=42, shuffle=random_dataloader)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=42, shuffle=random_dataloader)
     classifier = HeartFailureClassifier()

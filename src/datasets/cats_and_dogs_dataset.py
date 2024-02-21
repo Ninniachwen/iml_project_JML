@@ -1,4 +1,5 @@
 import torch
+import torch
 from torch.utils.data import Dataset
 from PIL import Image
 from torchvision.transforms import v2
@@ -47,7 +48,7 @@ class CandDDataSet(Dataset):
     def __getitem__(self, idx):
         image_path = self.image_paths[idx]
         label = self.labels[idx] 
+        image = Image.open(image_path)
         if self.transform:
-            image = Image.open(image_path)
             image = self.transform(image)
         return image, label

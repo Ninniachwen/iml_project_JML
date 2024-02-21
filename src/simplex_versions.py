@@ -120,13 +120,11 @@ def compact_original_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tens
 
     jacobian = compact_jacobian_projections(corpus_inputs, corpus_latents, test_id, classifier, input_baseline)
     
-    #TODO: jacobians
-    #TODO: detach jacobians too
     return latent_rep_approx.detach(), weights_softmax.detach(), jacobian.detach()
 
 def compact_jacobian_projections(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor, test_id:int, model:MnistClassifier, input_baseline:torch.Tensor, n_bins=100) -> torch.Tensor:  
     """
-    Compute the Jacobian Projection for the test example identified by test_id
+    Compute the Jacobian Projection for the test examples
     :param test_id: batch index of the test example
     :param model: the black-box model for which the Jacobians are computed
     :param input_baseline: the baseline input features
