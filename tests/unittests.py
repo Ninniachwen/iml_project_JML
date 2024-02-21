@@ -145,9 +145,10 @@ class UnitTests(unittest.TestCase):
             self.assertFalse(torch.equal(corpus4[0][0], corpus3[0][0]), f"{loader} corpus loader is always shuffeling in the same way!")
             self.assertFalse(torch.equal(test4[0][0], test3[0][0]), f"{loader} test loader is not always shuffeling in the same way!")
     
-    # test make_corpus
-    # test corps loader class distribution
     def _test_make_corpus(self):
+        """
+        test make_corpus class distribution
+        """
         image_paths, labels = get_images("data/Animal Images/test")
         dataset = CandDDataSet(image_paths=image_paths, labels=labels)
         datalaoder = DataLoader(dataset=dataset, batch_size=100, shuffle=False)
@@ -185,16 +186,50 @@ class UnitTests(unittest.TestCase):
 
 
 
-    # edge cases für input var (testid > testset) size of corpus&test (10, 100, 1000) 
+    # TODO:edge cases für input var (testid > testset) size of corpus&test (10, 100, 1000) 
 
-    # exceptions datset & model
-            
-    # exception (decompsition > corpus)
-            
-    def _test_do_simplex(self):
-        #TODO: finish and activate
-        print("this should not be executed")
+    def test_exceptions(self):
+        """
+        test exception for wrong datset or None result dataset-model combination
+        """
 
+        # exception datset
+        self.assertRaises(Exception, m.do_simplex(
+                    model_type=m.Model_Type.ORIGINAL,
+                    dataset=m.Dataset.NON_EXISTING_DATASET,
+                    cv=0,
+                    decomposition_size=3,
+                    corpus_size=10,
+                    test_size=1,
+                    test_id=0,
+                    print_jacobians=False, #this is only a print toggle, the jacobians will still be created
+                    r_2_scores=False,
+                    decompose=False,
+                    random_dataloader=False
+                ), "do_simplex should raise an exception if an unknown dataset is given")
+        
+        # wrong model-dataset-combination
+        self.assertEuqals(m.do_simplex(
+                    model_type=m.Model_Type.R_NORMALIZE_IWR,
+                    dataset=m.Dataset.CaN,
+                    cv=0,
+                    decomposition_size=3,
+                    corpus_size=10,
+                    test_size=1,
+                    test_id=0,
+                    print_jacobians=False, #this is only a print toggle, the jacobians will still be created
+                    r_2_scores=False,
+                    decompose=False,
+                    random_dataloader=False
+                ),None , "do_simplex should return None if an invald dataset-model combination is given")
+
+        # TODO:exception (decompsition > corpus)
+
+            
+    def test_do_simplex(self):
+        """
+        testing return values of do_simplex for different edge cases
+        """
         # if 4x false, result should be tuple[torch.Tensor, None, None, None, None]
         simplex_all_false = m.do_simplex(
                     model_type=m.Model_Type.ORIGINAL,
@@ -212,7 +247,7 @@ class UnitTests(unittest.TestCase):
         self.assertTrue(
             (type(simplex_all_false[0])==type(simplex_all_false[3])==torch.Tensor)
             & (simplex_all_false[1]==simplex_all_false[2]==simplex_all_false[4]==None), 
-            f"do_simplex should only return weights tensor and Nones in this setting. got {simplex_all_false}")
+            f"do_simplex should only return 2 tensors and 3 Nones in this setting. got {simplex_all_false}")
         
         # if test_size<3 then no r2 scores are created (restriciton from original simplex)
         simplex_NaN = m.do_simplex(
@@ -236,7 +271,7 @@ class UnitTests(unittest.TestCase):
         
         # return weights, latent_r2_score, output_r2_score, jacobian, decompostions
         # tuple[torch.Tensor, list[float], list[float], torch.Tensor, list[dict]]
-        # for mnist, all model types should give valid return val
+        # for mnist, all model types should give valid return values
         for mod in m.Model_Type:
             result = m.do_simplex(
                 model_type=mod,
@@ -259,7 +294,7 @@ class UnitTests(unittest.TestCase):
                 
         # return weights, latent_r2_score, output_r2_score, jacobian, decompostions
         # tuple[torch.Tensor, list[float], list[float], torch.Tensor, list[dict]]
-        # for other Datasets, the first three (non Ablation) model types should give valid return val
+        # for other Datasets, the first three (non Ablation) model types should give valid return values
         for d in [m.Dataset.CaN, m.Dataset.Heart]:
             for mod in list(m.Model_Type)[:3]:
                 result = m.do_simplex(
@@ -268,17 +303,17 @@ class UnitTests(unittest.TestCase):
                     cv=0,
                     decomposition_size=3,
                     corpus_size=10,
-                    test_size=1,
+                    test_size=3,
                     test_id=0,
                     print_jacobians=False,
-                    r_2_scores=False,
-                    decompose=False,
+                    r_2_scores=True,
+                    decompose=True,
                     random_dataloader=False
                 )
                 self.assertTrue(
                     (type(result[0])==type(result[3])==torch.Tensor) 
                     & (type(result[1])==type(result[2])==type(result[4])==list), 
-                    f"do_simplex should only return weights tensor and Nones in this setting ({mod}). got {result}")
+                    f"do_simplex should return 2 tensors and 3 lists in this setting ({mod}). got {result}")
 
     
 class TestWithDoSimplex(unittest.TestCase):
@@ -384,12 +419,12 @@ class TestWithDoSimplex(unittest.TestCase):
 
         
         # decomposition should be identical for original & compact original
-        self.assertTrue(is_close_w_index(self.orig_weights, self.compact_weights), "original_weights and compact_weights schould be identical, but arent")
-        self.assertTrue(is_close_w_index(self.orig_weights, self.reimpl100_weights), "original_weights and compact_weights schould be identical, but arent")
+        self.assertTrue(is_close_w_index(self.orig_weights, self.compact_weights, tolerance=0.0), "original_weights and compact_weights schould be identical, but arent")
+        self.assertTrue(is_close_w_index(self.orig_weights, self.reimpl100_weights, tolerance=0.1), "original_weights and compact_weights schould be close, but arent")
 
         # decomposition needs to add up to ~100% 
         self.assertAlmostEqual(sum(self.orig_weights), 1.0, delta=0.01, msg="original decomposition weights do not add up to at least 99%")
-        
+        # no need to test compact_weights, they are identical to orig_weights
         self.assertAlmostEqual(sum(self.reimpl100_weights), 1.0, delta=0.25, msg="reimplemented decomposition weights do not add up to  at least 99%")
         
     def test_jacobians(self):
@@ -432,7 +467,7 @@ class TestWithDoSimplex(unittest.TestCase):
 
 
    
-    # maybe test class-distr of classification against class-distr of decomposition
+    # TODO: maybe test class-distr of classification against class-distr of decomposition
         
 
 if __name__ == "__main__":

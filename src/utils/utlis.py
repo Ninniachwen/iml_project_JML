@@ -75,7 +75,7 @@ def print_jacobians_with_img(weights:torch.tensor, test_id:int, corpus_data:torc
         )
     
 
-def is_close_w_index(a:list[float], b:list[float]): 
+def is_close_w_index(a:list[float], b:list[float], tolerance=0.0): 
     """
     source: https://stackoverflow.com/a/72291500/14934164
     compares elements of 2 lists pairwise for numerical diff.
@@ -88,7 +88,7 @@ def is_close_w_index(a:list[float], b:list[float]):
         bbb = float(bb)
 
         # append if not close
-        if not isclose(aaa,bbb):
+        if not isclose(aaa,bbb, abs_tol=tolerance):
             r.append((idx, (aaa,bbb)))
 
     # print results

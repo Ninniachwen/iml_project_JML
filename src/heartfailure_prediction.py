@@ -23,18 +23,7 @@ def load_data(path):
     x['RestingECG'] = encoder.fit_transform(x['RestingECG'])
     x['ST_Slope'] = encoder.fit_transform(x['ST_Slope'])
     scaler = MinMaxScaler()
-    x = scaler.fit_transform(x) #TODO: produces warning:
-    """
-    c:\Users\meike\AppData\Local\Programs\Python\Python310\lib\site-packages\pandas\core\dtypes\cast.py:1641: DeprecationWarning: np.find_common_type is deprecated.  Please use `np.result_type` or `np.promote_types`.
-    See https://numpy.org/devdocs/release/1.25.0-notes.html and the docs for more information.  (Deprecated NumPy 1.25)
-    return np.find_common_type(types, [])
-    c:\Users\meike\AppData\Local\Programs\Python\Python310\lib\site-packages\pandas\core\dtypes\cast.py:1641: DeprecationWarning: np.find_common_type is deprecated.  Please use `np.result_type` or `np.promote_types`.
-    See https://numpy.org/devdocs/release/1.25.0-notes.html and the docs for more information.  (Deprecated NumPy 1.25)
-    return np.find_common_type(types, [])
-    c:\Users\meike\AppData\Local\Programs\Python\Python310\lib\site-packages\pandas\core\dtypes\cast.py:1641: DeprecationWarning: np.find_common_type is deprecated.  Please use `np.result_type` or `np.promote_types`.
-    See https://numpy.org/devdocs/release/1.25.0-notes.html and the docs for more information.  (Deprecated NumPy 1.25)
-    return np.find_common_type(types, [])
-    """
+    x = scaler.fit_transform(x) #TODO: produces warning
     return x,y.values
 
 def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test, random_seed=None, cv=0, epochs=60, lr=0.001):
