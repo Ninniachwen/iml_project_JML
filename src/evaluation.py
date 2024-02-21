@@ -1,39 +1,7 @@
-
-#TODO: create test for decomposition
-
-from matplotlib import pyplot as plt
-import numpy as np
-import pandas as pd
 import sklearn
-import torch
 
-# directly from original code visualization/images.py
-def plot_mnist(data, title: str = "") -> plt.Figure:
-    fig = plt.figure()
-    plt.imshow(data, cmap="gray", interpolation="none")
-    plt.title(title)
-    plt.xticks([])
-    plt.yticks([])
-    return plt
-    
-#TODO: probably remove to elsewhere
-def plot_most_imp_jacobian(weights, corpus_data, test_data, test_id):
-    most_important_example = weights[test_id].argmax()  # for test example 0
-    fig1 = plot_mnist(test_data[test_id][0], f"Test example {test_id}")
-    fig2 = plot_mnist(corpus_data[most_important_example][0], f"M.i. attribution to example 0 (corpus id {most_important_example})")
-    fig1.show()
-    fig2.show()
 
-    print(f"Biggest contributor to test example 0: {weights[0].argmax()} with weight {weights[0].max()}")
-    print(weights[0])
-
-def plot_jacobians(jacobian:torch.Tensor): #shape 1,28,28
-    fig2 = plot_mnist(jacobian)
-    fig2.show()
-
-    
-
-def r_2_scores(classifier, latent_rep_approx, latent_rep_true, test_data=None, corpus_data=None, weights=None, test_id=0, debugging=False):
+def r_2_scores(classifier, latent_rep_approx, latent_rep_true):
     output_approx = classifier.latent_to_presoftmax(latent_rep_approx).detach()
     output_true = classifier.latent_to_presoftmax(latent_rep_true).detach()
     output_r2_score = sklearn.metrics.r2_score(
@@ -42,10 +10,6 @@ def r_2_scores(classifier, latent_rep_approx, latent_rep_true, test_data=None, c
     latent_r2_score = sklearn.metrics.r2_score(
                 latent_rep_true, latent_rep_approx.detach().numpy()
             )
-    
-    #TODO: remove, including debugging var
-    if debugging:
-        plot_most_imp_jacobian(weights, corpus_data, test_data, test_id)
 
     return output_r2_score, latent_r2_score
 
@@ -54,7 +18,6 @@ def create_decompositions(test_data, test_targets, corpus_data, corpus_targets, 
 
     full_decomposition = []
     for s_id, sample, target in zip(range(len(test_data)), test_data, test_targets):
-        #assert test_id < test_size
         sample_weights = weights[s_id].numpy()
         top_x_ids:list[int] = sample_weights.argsort()[-decompostion_size:][::-1]
 

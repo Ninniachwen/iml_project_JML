@@ -12,24 +12,22 @@ class HeartFailureClassifier(BlackBox):
         super().__init__()
         self.fc1 = nn.Linear(in_features=11,out_features=16)
         self.fc2 = nn.Linear(in_features=16,out_features=8)
-        #self.drop2 = nn.Dropout()
         self.fc3 = nn.Linear(in_features=8,out_features=8)
         self.fc4 = nn.Linear(in_features=8,out_features=1)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
         
 
-    def latent_representation(self, x: torch.Tensor)->torch.Tensor:
+    def latent_representation(self, x: torch.Tensor) -> torch.Tensor:
         """
         Computes latent represenation
-        :para x: input tensor
+        :param x: input tensor
         :return: latent representation as tensor
         """
         x = self.fc1(x)
         x = self.relu(x)
         x = self.fc2(x)
         x = self.relu(x)
-        #x = self.drop2(x)
         x = self.fc3(x)
         x = self.relu(x)
         return x

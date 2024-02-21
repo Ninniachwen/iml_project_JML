@@ -4,21 +4,22 @@ import os
 import sys
 import unittest
 import numpy as np
-
 import torch
+
 
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
+from src.utils.utlis import plot_jacobians_grayscale, print_jacobians_with_img
 import src.evaluation as e
 import src.simplex_versions as s
 import src.classifier_versions as c
 import src.main as m
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
-from src.models.CatsAndDogsModel import CatsandDogsClassifier
-from src.models.HeartfailureModel import HeartFailureClassifier
+from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
+from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 
 def is_close_w_index(a:list[float], b:list[float]): 
     """
@@ -52,14 +53,37 @@ class UnitTests(unittest.TestCase):
         self.corpus_size = 10
         self.test_size = 1
         self.test_id = 0
+
+
+    def test_get_images(self):
+        """
+        check separiatoin of corpus image.
+        """
+        image_paths = ["data/Animal Images/train", "data/Animal Images/test"]
+        for image_path in image_paths:
+            picture_files, labels = get_images(image_path)
+            self.assertTrue(
+                (len(picture_files)==len(labels))
+                & all(label in LABEL.values() for label in labels))
+            if image_path == image_path[0]:
+                self.assertTrue(
+                    (len(picture_files)==1000)# 1000 pictures in the test set
+                    &(len(labels.count(LABEL["cats"])==labels.count(LABEL["dogs"])))# test set is balanced
+                )
+            if image_path == image_path[1]:
+                self.assertTrue(
+                    (len(picture_files)==29062)# 29062 pictures in the training set
+                    &(len(labels.count(LABEL["cats"])==14560)) 
+                    &(len(labels.count(LABEL["dogs"])==14502))
+                )
      
 
     def test_data_loaders(self):
         """
-        tests evaluation.py r_2_scores(): check if all loaders return classifier and correct format and types for corpus and test sets.
+        tests TODO check if all loaders return classifier and correct format and types for corpus and test sets.
         """
         print(3*">" + "testing data loader format and type")
-        loaders = [c.train_or_load_mnist, c.train_or_load_heartfailure_model , c.train_or_load_CaN_model]
+        loaders = [c.train_or_load_mnist, c.train_or_load_heartfailure_model , c.train_or_load_CaD_model]
         types = [MnistClassifier, HeartFailureClassifier, CatsandDogsClassifier]
         corpus_size = 10
         test_size = 1
@@ -79,19 +103,19 @@ class UnitTests(unittest.TestCase):
                 (type(result[1][0]) == torch.Tensor) 
                 & (len(result[1][0]) == corpus_size )
                 & (result[1][0].dtype == torch.float32), 
-                f"Corpus triple should contain a float32 tensor of length {corpus_size} as first item.\
+                f"Corpus triple should contain a float32 tensor of length {corpus_size} as first item (data).\
                 got {type(result[1][0])}, {len(result[1][0])}, {result[1][0].dtype}")
             self.assertTrue(
                 (type(result[1][1]) == torch.Tensor) 
                 & (list(result[1][1].shape) == [corpus_size] )
                 & (result[1][1].dtype == torch.int64), 
-                f"Corpus triple should contain a int64 tensor of shape [{corpus_size}] as second item.\
+                f"Corpus triple should contain a int64 tensor of shape [{corpus_size}] as second item (target).\
                 got {type(result[1][1])}, {list(result[1][1].shape)}, {result[1][1].dtype}")
             self.assertTrue(
                 (type(result[1][2]) == torch.Tensor) 
                 & (len(result[1][2]) == corpus_size )
                 & (result[1][2].dtype == torch.float32), 
-                f"Corpus triple should contain a float32 tensor of length {corpus_size} as third item.\
+                f"Corpus triple should contain a float32 tensor of length {corpus_size} as third item (latents).\
                 got {type(result[1][2])}, {len(result[1][2])}, {result[1][2].dtype}")
 
             # test triple shapes & types
@@ -112,17 +136,17 @@ class UnitTests(unittest.TestCase):
                 & (len(result[2][2]) == test_size )
                 & (result[2][2].dtype == torch.float32), 
                 f"Test triple should contain a float32 tensor of length {test_size} as third item.\
-                got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")
-            
+                got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")       
+
       
     def test_shuffle_data_loader(self):
         """
         compare first element from loaded dataset.
-        Testing train_or_load_mnist, train_or_load_CaN_model & train_or_load_heartfailure_model from classifier_versions.py
+        Testing train_or_load_mnist, train_or_load_CaD_model & train_or_load_heartfailure_model from classifier_versions.py
         """
         print(3*">" + "testing shuffle data loader")
 
-        for loader in [c.train_or_load_mnist]:#TODO, c.train_or_load_CaN_model, c.train_or_load_heartfailure_model]:
+        for loader in [c.train_or_load_mnist]:#TODO, c.train_or_load_CaD_model, c.train_or_load_heartfailure_model]:
 
             # not shuffled, same first sample
             _, corpus1, test1 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=False)
@@ -145,7 +169,7 @@ class UnitTests(unittest.TestCase):
         tests r_2_scores() from evaluation.py. r2 score schould be 1.0 for same img, and lower than 1.0 for different imgs. 
         """
         print(3*">" + "testing r2 scores")
-        for dataloader in [c.train_or_load_mnist]:#TODO, c.train_or_load_CaN_model, c.train_or_load_heartfailure_model]
+        for dataloader in [c.train_or_load_mnist]:
             c1, corpus1, test1 = dataloader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
             c2, corpus2, test2 = dataloader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
         
@@ -154,22 +178,27 @@ class UnitTests(unittest.TestCase):
 
             result = e.r_2_scores(c1, corpus1[2], corpus2[2])
             self.assertLess(result[0], 1.0)    # score of two different samples should not be 1.0
+            #TODO: 2 images from same corpus
         
     
+        # test make_corpus
+        # test corps loader class distribution
+        # def test_make_corpus():    
+        #     test_files = [f"{i}_test" for i in range(1000)]   
+        #     test_labels = [ i%2 for i in range(100)]
+        #     dataset = CandDDataSet(image_paths=test_files, labels=test_labels, transform=None)
+        #     datalaoder = DataLoader(dataset=dataset, batch_size=1, shuffle=False)
+        #     corpus = make_corpus(datalaoder)
 
 
-    # edge cases für input var (testid > testset)
+    # edge cases für input var (testid > testset) size of corpus&test (10, 100, 1000) 
 
-    # exceptions
+    # exceptions datset & model
             
-    # test make_corpus
-    
-    # TODO: test heartfialure & catsAndDogs predictis/training
-        
-    #TODO: test random seed for classifier or simplex model?
+    # exception (decompsition > corpus)
 
     
-class TestSimplex(unittest.TestCase):
+class TestDoSimplex(unittest.TestCase):
     """
     This class tests other funktions, using do_simplex, because it handles the more complex input variables like classifier, dataset, ..
     It tests original_model(), compact_original_model() and reimplemented_model() in their basic (not ablation) funtionality from simplex_versions.py.
@@ -270,20 +299,26 @@ class TestSimplex(unittest.TestCase):
         
         # decomposition should be identical for original & compact original
         self.assertTrue(is_close_w_index(self.orig_weights, self.compact_weights))
-        # self.assertTrue(is_close_w_index(self.orig_weights, self.reimpl_weights))
-        # not the same to reimplemented weights
+        #TODO: for decomposition = 100
+        #self.assertTrue(is_close_w_index(self.orig_weights, self.reimpl_weights))
 
         # decomposition needs to add up to ~100% 
         self.assertAlmostEqual(sum(self.orig_weights), 1.0, delta=0.01, msg="original decomposition weights do not add up to 99%")
-        self.assertAlmostEqual(sum(self.reimpl_weights), 1.0, delta=0.25, msg="reimplemented decomposition weights do not add up to 99%")
+        self.assertAlmostEqual(sum(self.reimpl_weights), 1.0, delta=0.25, msg="reimplemented decomposition weights do not add up to 99%") #TODO: dec_size=100
+
+        #TODO: explain why decomposition 100!
         
     def test_jacobians(self):
         print("TODO: implement test_jacobians")# TODO: implement
         # test original jacobian method against ours
-        #e.plot_jacobians(self.results[0]["jac"][0][0])
-        #e.plot_jacobians(self.results[2]["jac"][0][0])
-        #e.plot_jacobians(self.results[2]["jac"][0][0]-self.results[0]["jac"][0][0])
-        #self.assertTrue(torch.equal(self.results[0]["jac"][0], self.results[2]["jac"][0]), "first reimplemented jacobian differs from first original jacobian")
+        plot_jacobians_grayscale(self.results[0]["jac"][0][0])
+        plot_jacobians_grayscale(self.results[2]["jac"][0][0])
+        plot_jacobians_grayscale(self.results[2]["jac"][0][0]-self.results[0]["jac"][0][0])
+        #print_jacobians_with_img()#TODO test this
+        
+        # element wise mean_square_error
+        # row max in same place?
+        self.assertTrue(torch.equal(self.results[0]["jac"][0], self.results[2]["jac"][0]), "first reimplemented jacobian differs from first original jacobian")
 
         """currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         save_path = os.path.join(os.path.dirname(currentdir), "files")
@@ -319,7 +354,7 @@ class TestSimplex(unittest.TestCase):
         print(10*"-" + "testing quality of decompositions" + 10*"-")
         # quality tests:
 
-        print(3*">" + "checking most important corpus id in decomposition")
+        print(3*">" + "checking most important corpus id in decomposition") #TODO: duplacate to dataloader?
         # most important sample: same for all models?
         self.assertEqual(self.results[0]["dec"][self.sample_id]["sample_id"], self.results[1]["dec"][self.sample_id]["sample_id"], "got different samples!")
         self.assertEqual(self.results[0]["dec"][self.sample_id]["sample_id"], self.results[2]["dec"][self.sample_id]["sample_id"], "got different samples!")
@@ -330,38 +365,29 @@ class TestSimplex(unittest.TestCase):
         self.assertEqual(self.results[1]["dec"][self.sample_id]["target"], self.results[1]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_target"], "quality issue, most important explainer has different target than sample! (compact simplex)")
         self.assertEqual(self.results[2]["dec"][self.sample_id]["target"], self.results[2]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_target"], "quality issue, most important explainer has different target than sample! (reimplemented simplex)")
         
-        print(3*">" + "QUALITY: comparing most important explainer in decomp between models")
+        print(3*">" + "QUALITY: comparing most important corpus img in decomp between models")
         # check if explainer id's for first img is same for all models
-        self.assertEqual(self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], self.results[1]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw original & compact simplex!")
-        self.assertEqual(self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], self.results[1]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw compact & reimplemented simplex!")
+        self.assertEqual(self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], self.results[1]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw original & compact simplex!") #TODO: change from int to model
+
+        self.assertEqual(self.results[0]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], self.results[2]["dec"][self.sample_id]["decomposition"][self.most_imp]["c_id"], msg="most important explainer differs btw original & reimplemented simplex!")
 
         # check if same corpus-ids in decomposition
         self.assertListEqual(self.orig_c_ids, self.compact_c_ids, f"corpus id's in decomposition differ btw original and compact model: {self.orig_c_ids}, {self.compact_c_ids}")
         print(3*">" + "QUALITY: comparing corpus id's in decomp between original and reimplemented simplex")
-        #self.assertListEqual(self.orig_c_ids, self.reimpl_c_ids, f"QUALITY: corpus id's in decomposition differ btw original and reimplemented model: {self.orig_c_ids}, {self.reimpl_c_ids}") #TODO: not true, keep?
-        #    print(f"QUALITY Issue: corpus id's in decomposition differ btw original and reimplemented model: {self.orig_c_ids}, {self.reimpl_c_ids}")
+        self.assertListEqual(self.orig_c_ids, self.reimpl_c_ids, f"QUALITY: corpus id's in decomposition differ btw original and reimplemented model: {self.orig_c_ids}, {self.reimpl_c_ids}") #TODO: decomposition 100
+        #TODO unocmment test and explaiin why
 
 
-""" checked above #TODO: delete
-        print(3*">" + "QUALITY: comparing importance of explainers(corpus images in decomposition) between models")
-        # same probability for all explainers (btw models) ?
-        places_acccuracy = 4        
-        self.assertAlmostEqual(self.orig_weights, self.compact_weights, places=places_acccuracy, msg="accuracy btw original & compact simplex differs!")
-        self.assertAlmostEqual(self.orig_weights, self.reimpl_weights, places=places_acccuracy, msg="accuracy btw compact & reimplemented simplex differs!")"""
-
-        
-
-    
-        
+   
     # maybe test class-distr of classification against class-distr of decomposition
         
     # does test_size influence simplex performance?
 
 if __name__ == "__main__":
-    #unittest.main()
-    test = UnitTests()
-    test.setUpClass()
-    test.test_data_loaders()
+    unittest.main()
+    #test = UnitTests()
+    #test.setUpClass()
+    #test.test_data_loaders()
 
 
 # execute all tests via console from root dir using

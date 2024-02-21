@@ -4,32 +4,31 @@ import sys
 import torch
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
+import sys
 
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-#sys.path.insert(0, parentdir)
 
-import sys
-sys.path.insert(0, "")  # noqa
+sys.path.insert(0, "")
 
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
 from original_code.src.simplexai.experiments import mnist
 from src.cats_and_dogs_training import train_model
-from src.models.CatsAndDogsModel import CatsandDogsClassifier
+from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.cats_and_dogs_predictions import load_model
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import get_images
 from src.utils.corpus_creator import make_corpus
 from src.heartfailure_prediction import train_heartfailure_model, load_data
 from src.datasets.heartfailure_dataset import HeartFailureDataset
-from src.models.HeartfailureModel import HeartFailureClassifier
+from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 
 
 SAVE_PATH=os.path.join(parentdir, "files")
 
 
-def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):
+def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False, use_corpus_maker=False):
     # the following are standard values which are used in mnist.py to train mnistClassifier
     if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")):
         mnist.train_model(
@@ -42,7 +41,6 @@ def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, ran
         
     classifier = MnistClassifier()
     classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")))
-    # model.to(device) porbably not necessary
     classifier.eval()
 
     # data loader from approximate_quality
@@ -54,13 +52,13 @@ def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, ran
     batch_id_corpus, (corpus_data, corpus_target) = next(enumerate(corpus_loader))
     corpus_data = corpus_data.detach()
     corpus_latents = classifier.latent_representation(corpus_data).detach()
-    #TODO: maybe implement own mnist latents fuction?
-    #TODO: which detach is truely necessary?
-    
+
+    #TODO: use corpus maker (Lucas)
+
     return classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents)
 
 
-def train_or_load_CaN_model(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):
+def train_or_load_CaD_model(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):
 
     torch.manual_seed(seed=random_seed)
     
@@ -68,6 +66,7 @@ def train_or_load_CaN_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
         train_model(save_path=SAVE_PATH, cv=cv, random_seed=random_seed)
 
     classifier = load_model(os.path.join(SAVE_PATH,f"model_cad_{cv}.pth"))
+    classifier.eval()
     
     test_dir = r"data\Animal Images\test"
 
@@ -94,13 +93,17 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     torch.manual_seed(random_seed)
 
     datapath = r"data\heart.csv"
+
     x,y = load_data(datapath)
     x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.1,random_state=42,shuffle=True)
+
     classifier = HeartFailureClassifier()
     file_w_path = os.path.join(SAVE_PATH, f"model_heartfailure_{cv}.pth")
     if not os.path.isfile(file_w_path):
         train_heartfailure_model(classifier, save_path=file_w_path, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
+
     classifier.load_state_dict(torch.load(file_w_path))
+    classifier.eval()
 
     train_data = HeartFailureDataset(x_train,y_train)
     test_data = HeartFailureDataset(x_test,y_test)
@@ -113,11 +116,13 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     (test_data, test_targets) = make_corpus(test_loader, corpus_size=test_size)
 
     corpus_data = corpus_data.detach()
-
     test_data = test_data.detach()
-
     corpus_latents = classifier.latent_representation(corpus_data).detach()
-
     test_latents = classifier.latent_representation(test_data).detach()
 
     return classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents)
+
+
+if __name__ == "__main__":
+    train_or_load_heartfailure_model()
+    train_or_load_CaD_model()

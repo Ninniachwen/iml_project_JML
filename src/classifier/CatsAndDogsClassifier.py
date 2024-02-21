@@ -6,7 +6,7 @@ from original_code.src.simplexai.models.base import BlackBox
 class CatsandDogsClassifier(BlackBox):
     def __init__(self)-> None:
         """
-        pets and dogs CNN classifier model. Uses three convolutional layers and two linear layer for flattening. Dropout is used after layer convolution 2 and linear layer 1.
+        pets and dogs CNN classifier. Uses three convolutional layers and two linear layer for flattening.
         """
         super().__init__()
         self.conv1 = nn.Conv2d(1,16,3)
@@ -23,7 +23,7 @@ class CatsandDogsClassifier(BlackBox):
     def latent_representation(self, x: torch.Tensor) -> torch.Tensor:
         """
         Computes latent represenation
-        :para x: input tensor
+        :param x: input tensor
         :return: latent representation as tensor
         """
         x = self.pool(self.relu(self.conv1(x)))

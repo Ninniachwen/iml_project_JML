@@ -1,6 +1,7 @@
 import inspect
 import os
 import sys
+import torch
 
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -9,31 +10,16 @@ sys.path.insert(0, parentdir)
 from original_code.src.simplexai.utils.schedulers import ExponentialScheduler
 from original_code.src.simplexai.explainers.simplex import Simplex
 
-import torch
 
-# settings use_case:
-    # scheduler:
-    #reg_factor_init=1.0; reg_factor_final=1000; n_epoch=20000  #epochs for simplex (epochs for mnist=10)
-    #decompostion_size=100; test_id=0
-
-    # settings toy_example:
-    # scheduler:
-    # reg_factor_init=0; x_final=100; n_epoch=20000
-    # n_keep=decompostion_size=5; test_id=22
-
-    # settings Yasmin:
-    # reg_factor_init=0.1; x_final=100; n_epoch=10000
-    # n_keep=decompostion_size=100; test_id=0
-
-REG_FACTOR_INIT  = 0.1 # as in mnis exp.  #TODO: compare?
+REG_FACTOR_INIT  = 0.1
 REG_FACTOR_FINAL = 100
 EPOCHS = 10000
 
-def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier):  # jacobian
+def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, input_baseline):  # Jasmin
     # values take from "approximate_quality" in mnist.py
-    reg_factor_scheduler = ExponentialScheduler(REG_FACTOR_INIT, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS) # test for step_factor=1.000691014168259 ?
+    reg_factor_scheduler = ExponentialScheduler(REG_FACTOR_INIT, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS)
     simplex = Simplex(corpus_examples=corpus_inputs,
-            corpus_latent_reps=corpus_latents)    # test for corpus_size=100 & dim_latent=50
+            corpus_latent_reps=corpus_latents)
     simplex.fit(test_examples=test_inputs,
                 test_latent_reps=test_latents,
                 n_keep=decompostion_size,  # how many weights we want to keep in the end; keep all now to compare to own  model
@@ -47,21 +33,20 @@ def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, dec
     
     # test unit -> if sum of top x weihgt adds up to at least ~90? or some other value a well trained original would have
 
-    input_baseline = torch.zeros(corpus_inputs.shape)
     jacobian = simplex.jacobian_projection(test_id=test_id, model=classifier, input_baseline=input_baseline)
 
-    return latent_rep_approx.detach(), weights.detach(), jacobian
+    return latent_rep_approx.detach(), weights.detach(), jacobian.detach()
 
 
-def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, softmax=True, regularisation=True):
+def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, input_baseline, softmax=True, regularisation=True):
     scheduler = ExponentialScheduler(x_init=0.1, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS)
     if regularisation:
         reg_factor = REG_FACTOR_INIT
     else:
         reg_factor = 0
 
-    #simplex.fit TODO: make less similar to original...
-    W_0 = torch.zeros((test_latents.shape[0], corpus_inputs.shape[0]), requires_grad=True) #test shape=10,100 & req gradient
+    # simplex.fit
+    W_0 = torch.zeros((test_latents.shape[0], corpus_inputs.shape[0]), requires_grad=True) 
     optimizer = torch.optim.Adam([W_0])
     for epoch in range(EPOCHS):
         #TODO: from simplex
@@ -83,21 +68,24 @@ def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_late
                 f" Regulator: {regulator.item():.3g} ; Reg Factor: {reg_factor:.3g}"
             )
         reg_factor = scheduler.step(reg_factor)
-        #TODO: from simplex
+    
 
     weights_softmax = torch.softmax(W_0, dim=-1).detach()
     # end of fit
+
     if softmax:
         latent_rep_approx = weights_softmax @ corpus_latents    # reduction from  
     else:
         latent_rep_approx = weights @ corpus_latents 
 
     jacobian = []
+    
+    #TODO:  jacobians
     #TODO: detach jacobians too?
-    return latent_rep_approx.detach(), weights_softmax.detach(), jacobian
+    return latent_rep_approx.detach(), weights_softmax.detach(), jacobian.detach()
 
     
-def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, mode="softmax", weight_init_zero=True):
+def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, input_baseline, mode="softmax", weight_init_zero=True):
     """Train our reimplemented simplex model.
 
     Parameters:
@@ -133,7 +121,7 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
             )
     
     weights = simplex.weight.clone()
-    print(weights[0].max())
+
     # manually set the weights which should not be in the decomposition to 0
     weight_id_irrelevant = weights.argsort()[:,:(size_corpus - decompostion_size)]
     for i in range(size_test):
@@ -147,6 +135,7 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
 
     latent_rep_approx = simplex(corpus_latents, mode=mode) 
 
+    #TODO
     input_baseline = torch.zeros(corpus_inputs.shape)  #TODO: also as global parameter? 
 
     jacobian = simplex.get_jacobian(test_id, corpus_inputs, test_latents, input_baseline, classifier)
@@ -156,8 +145,6 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
     return latent_rep_approx.detach(), weights.detach(), jacobian
 
 
-#TODO: move to models folder
-#TODO: diff btw models and classifiers
 class Simplex_Model(torch.nn.Module):
     """Our reimplemented model. """
     # idea: do the training done in "fit"-Function of "simplex.py" in an more intuitive way

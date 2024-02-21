@@ -1,16 +1,15 @@
 import csv
 from pathlib import Path
-from captum.attr._utils.visualization import visualize_image_attr
 import enum
 import inspect
-import numpy as np
 import os
 import torch
 import sys
 import argparse
 
-#TODO: check if requirements file is sufficient
+from src.utils.utlis import print_jacobians_with_img
 
+#TODO: check if requirements file is sufficient
 
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -85,7 +84,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         test_data, test_targets, test_latents = test_set
         
     elif dataset is Dataset.CaN:
-        classifier, corpus, test_set = c.train_or_load_CaN_model(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
+        classifier, corpus, test_set = c.train_or_load_CaD_model(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
         #TODO: maybe keep as triples and hand triples to models
         corpus_data, corpus_target, corpus_latents = corpus
         test_data, test_targets, test_latents = test_set
@@ -159,26 +158,8 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decomposition_size, weights)
 
     if print_jacobians:
-
-        #most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
-        #saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
-
-        # [Jasmin:] The following works for printing the jacobians. We may want to print them 
-        # in a different file / with some global parameters / using the decomposition
-        most_important_example = weights[test_id].argmax()
-        image = corpus_data[most_important_example].numpy().transpose((1, 2, 0))  # transpose see use_case.py
-        saliency = jacobian[most_important_example].numpy().transpose((1, 2, 0))  # transpose see use_case.py
-        # the following code, see use_case.py
-        fig3, axis = visualize_image_attr(
-                saliency,
-                image,
-                method="blended_heat_map",
-                sign="all",
-                title="Jacobian of most important corpus example",
-                use_pyplot=True,
-            )
-        most_imp_id = decompostions[test_id]["decomposition"][0]["c_id"]
-        saliency = jacobian[most_imp_id].numpy().transpose((1, 2, 0))
+        print_jacobians_with_img(weights, test_id, corpus_data, jacobian)
+        
     
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions
 
@@ -309,10 +290,17 @@ if __name__ == "__main__":
         action="store_true",
         help="Run the tests for the ablation study and save it \"/files/ablation_results.csv\"",
     )
+    parser.add_argument(
+        "-original",
+        action="store_true",
+        help="Run the original study from the paper and save it \"/files/ablation_results.csv\"",
+    )
     args = parser.parse_args()
     print(args)
     if args.ablation:
         run_ablation()
+    elif args.original:
+        run_original_experiment()
     else:
         parser.print_help()
         parser.exit()
