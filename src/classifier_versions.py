@@ -21,7 +21,7 @@ from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import get_images
 from src.utils.corpus_creator import make_corpus
-from src.heartfailure_prediction import train_heartfailure_model, load_data
+from src.heartfailure_training import train_heartfailure_model, load_data
 from src.datasets.heartfailure_dataset import HeartFailureDataset
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 
@@ -87,7 +87,7 @@ def train_or_load_CaD_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
 
     picture_files, labels = get_images(test_dir)
     test_set = CandDDataSet(image_paths=picture_files, labels=labels)
-    test_loader = DataLoader(test_set, batch_size=200, shuffle=True)
+    test_loader = DataLoader(test_set, batch_size=200, shuffle=random_dataloader)
     (test_data, test_targets) = make_corpus(test_loader, corpus_size=test_size)
     test_data = test_data.detach()
     test_latents = classifier.latent_representation(test_data).detach()
@@ -96,7 +96,7 @@ def train_or_load_CaD_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
 
     picture_files, labels = get_images(corpus_dir)
     corpus_set = CandDDataSet(image_paths=picture_files, labels=labels)
-    corpus_loader = DataLoader(corpus_set, batch_size=200, shuffle=True)
+    corpus_loader = DataLoader(corpus_set, batch_size=200, shuffle=random_dataloader)
     (corpus_data, corpus_target) = make_corpus(corpus_loader=corpus_loader, corpus_size=corpus_size)
     corpus_data = corpus_data.detach()
     corpus_latents = classifier.latent_representation(corpus_data).detach()
@@ -114,11 +114,10 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
 
     x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=42, shuffle=random_dataloader)
     classifier = HeartFailureClassifier()
-    file_w_path = os.path.join(SAVE_PATH, f"model_heartfailure_{cv}.pth")
-    if not os.path.isfile(file_w_path):
-        train_heartfailure_model(classifier, save_path=file_w_path, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
+    if not os.path.isfile(os.path.join(SAVE_PATH,f"model_heartfailure_{cv}.pth")):
+        train_heartfailure_model(classifier, save_path=SAVE_PATH, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
 
-    classifier.load_state_dict(torch.load(file_w_path))
+    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,f"model_heartfailure_{cv}.pth")))
     classifier.eval()
 
     train_data = HeartFailureDataset(x_train, y_train)
@@ -141,4 +140,4 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
 
 if __name__ == "__main__":
     train_or_load_heartfailure_model()
-    train_or_load_CaD_model()
+    train_or_load_CaD_model(cv=1)
