@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 import sys
 
-from src.cats_and_dogs_predictions import load_model
 
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -16,6 +15,7 @@ sys.path.insert(0, "")
 
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
 from original_code.src.simplexai.experiments import mnist
+from src.cats_and_dogs_predictions import load_model
 from src.cats_and_dogs_training import train_model
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
@@ -124,8 +124,8 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     train_data = HeartFailureDataset(x_train, y_train)
     test_data = HeartFailureDataset(x_test, y_test)
     
-    train_loader = DataLoader(train_data, batch_size=50, shuffle=True)
-    test_loader = DataLoader(test_data, batch_size=50, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=50, shuffle=random_dataloader)
+    test_loader = DataLoader(test_data, batch_size=50, shuffle=random_dataloader)
 
     (corpus_data, corpus_target) = make_corpus(train_loader, corpus_size=corpus_size)
 

@@ -24,7 +24,7 @@ def make_corpus(corpus_loader: DataLoader, corpus_size=100, n_classes=2):
                     labels[corpus_1_indices[sample_index]]=label
                     
             else:     # fill corpus with files, keep class balance
-                if labels.count(label)<corpus_size+1//n_classes:
+                if labels.count(label)<((corpus_size+1)//n_classes):
                     corpus_files.append(file)
                     labels.append(label)
                 else:

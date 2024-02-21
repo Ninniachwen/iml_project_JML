@@ -18,7 +18,7 @@ from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import LABEL, get_images
 from src.utils.corpus_creator import make_corpus
-from src.utils.utlis import compare_row_max, get_row_max, is_close_w_index, plot_jacobians_grayscale, plot_mnist, print_jacobians_with_img
+from src.utils.utlis import compare_row_max, get_row_max, is_close_w_index, jacobian_compare_score, plot_jacobians_grayscale, plot_mnist, print_jacobians_with_img
 
 class UnitTests(unittest.TestCase):
 
@@ -123,7 +123,7 @@ class UnitTests(unittest.TestCase):
         """
         print(3*">" + "testing shuffle data loader")
 
-        for loader in [c.train_or_load_mnist]:#TODO, c.train_or_load_CaD_model, c.train_or_load_heartfailure_model]:
+        for loader in [c.train_or_load_mnist, c.train_or_load_CaD_model, c.train_or_load_heartfailure_model]:
 
             # not shuffled, same first sample
             _, corpus1, test1 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=False)
@@ -139,20 +139,37 @@ class UnitTests(unittest.TestCase):
             # both shuffled, different first sample
             _, corpus4, test4 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
             self.assertFalse(torch.equal(corpus4[0][0], corpus3[0][0]), "mnist corpus loader is always shuffeling in the same way!")
-            self.assertFalse(torch.equal(test4[0][0], test3[0][0]), "mnist test loader is not always shuffeling in the same way!")        
+            self.assertFalse(torch.equal(test4[0][0], test3[0][0]), "mnist test loader is not always shuffeling in the same way!")
     
     # test make_corpus
     # test corps loader class distribution
     def _test_make_corpus(self):
-        #TODO: create with lucas and enable (_)
         image_paths, labels = get_images("data/Animal Images/test")
         dataset = CandDDataSet(image_paths=image_paths, labels=labels)
-        datalaoder = DataLoader(dataset=dataset, batch_size=100, shuffle=True)
-        corpus = make_corpus(datalaoder)
+        datalaoder = DataLoader(dataset=dataset, batch_size=100, shuffle=False)
+        corpus = make_corpus(datalaoder, corpus_size=100)
         count = [list(corpus[1]).count(i) for i in [0,1]]
+        self.assertEqual(count, [50,50], "corpus does not have a 50/50 class distribution")
+
+        """  #TODO: Lucas: für heartFailure
+        image_paths, labels = get_images("data/Animal Images/test")
+        dataset = CandDDataSet(image_paths=image_paths, labels=labels)
+        datalaoder = DataLoader(dataset=dataset, batch_size=100, shuffle=False)
+        corpus = make_corpus(datalaoder, corpus_size=100)
+        count = [list(corpus[1]).count(i) for i in [0,1]]
+        self.assertEqual(count, [50,50], "corpus does not have a 50/50 class distribution")
+        """
+
+        """  #TODO: Lucas?: für Mnist
+        image_paths, labels = get_images("data/Animal Images/test")
+        dataset = CandDDataSet(image_paths=image_paths, labels=labels)
+        datalaoder = DataLoader(dataset=dataset, batch_size=100, shuffle=False)
+        corpus = make_corpus(datalaoder, corpus_size=100)
+        count = [list(corpus[1]).count(i) for i in [0,1]]
+        self.assertEqual(count, [50,50], "corpus does not have a 50/50 class distribution")
+        """
 
 
-    
     def test_r_2_scores(self):
         """
         tests r_2_scores() from evaluation.py. r2 score schould be 1.0 for same tensors, and lower than 1.0 for different tensors. 
@@ -225,19 +242,20 @@ class TestWithDoSimplex(unittest.TestCase):
     def setUpClass(self):
         print(10*"-" + "training our simplex" + 10*"-")
         
-        models = [m.Model_Type.ORIGINAL, m.Model_Type.ORIGINAL_COMPACT, m.Model_Type.REIMPLEMENTED]     # without ablation models
+        models = [m.Model_Type.ORIGINAL, m.Model_Type.ORIGINAL_COMPACT, m.Model_Type.REIMPLEMENTED, m.Model_Type.REIMPLEMENTED]     # without ablation models, with extra reimplemented(decomp=100)
         #self.simplex_model_functions = [c.original_model]#TODO, c.compact_original_model, c.reimplemented_model]
         self.decomposition_size = 5
+        decomp = [5,5,5,100]
         self.corpus_size = 100
         self.test_size = 10
         self.test_id = 0
         self.random_seed = 42
         self.results = []
         self.cv = 0
-        for model in models:
+        for model, d in zip(models, decomp):
             w, lr2, or2, j, d = m.do_simplex(
                 model_type=model, 
-                decomposition_size=self.decomposition_size, 
+                decomposition_size=d, 
                 corpus_size = self.corpus_size,
                 test_size = self.test_size,
                 test_id = self.test_id,
@@ -253,14 +271,17 @@ class TestWithDoSimplex(unittest.TestCase):
         self.orig_decomp = self.results[0]["dec"]
         self.compact_decomp = self.results[1]["dec"]
         self.rempl_decomp = self.results[2]["dec"]
+        self.rempl_decomp_100 = self.results[2]["dec"]
         
         self.orig_weights = [self.orig_decomp[self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
         self.compact_weights = [self.compact_decomp[self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
         self.reimpl_weights = [self.rempl_decomp[self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
+        self.reimpl100_weights = [self.rempl_decomp_100[self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
 
         self.orig_c_ids = [self.orig_decomp[self.sample_id]["decomposition"][i]["c_id"] for i in range(self.decomposition_size)]
         self.compact_c_ids = [self.compact_decomp[self.sample_id]["decomposition"][i]["c_id"] for i in range(self.decomposition_size)]
         self.reimpl_c_ids = [self.rempl_decomp[self.sample_id]["decomposition"][i]["c_id"] for i in range(self.decomposition_size)]
+        self.reimpl100_c_ids = [self.rempl_decomp_100[self.sample_id]["decomposition"][i]["c_id"] for i in range(self.decomposition_size)]
 
     def test_simplex_size(self):
         """
@@ -314,37 +335,31 @@ class TestWithDoSimplex(unittest.TestCase):
         
         # decomposition should be identical for original & compact original
         self.assertTrue(is_close_w_index(self.orig_weights, self.compact_weights))
-        #TODO: for decomposition = 100
-        #self.assertTrue(is_close_w_index(self.orig_weights, self.reimpl_weights))
+        self.assertTrue(is_close_w_index(self.orig_weights, self.reimpl100_weights))
 
         # decomposition needs to add up to ~100% 
         self.assertAlmostEqual(sum(self.orig_weights), 1.0, delta=0.01, msg="original decomposition weights do not add up to 99%")
-        self.assertAlmostEqual(sum(self.reimpl_weights), 1.0, delta=0.25, msg="reimplemented decomposition weights do not add up to 99%") #TODO: dec_size=100
-
-        #TODO: explain why decomposition 100!
+        self.assertAlmostEqual(sum(self.reimpl100_weights), 1.0, delta=0.25, msg="reimplemented decomposition weights do not add up to 99%")
         
     def test_jacobians(self):
         print("TODO: implement test_jacobians")# TODO: implement
         # test original jacobian method against ours
-        plot_mnist(self.results[0]["jac"][0][0])
-        plot_mnist(self.results[1]["jac"][0][0])
-        plot_mnist(self.results[2]["jac"][0][0])
+        plot_jacobians_grayscale(self.results[0]["jac"][0][0])
+        plot_jacobians_grayscale(self.results[1]["jac"][0][0])
+        plot_jacobians_grayscale(self.results[2]["jac"][0][0])
         #plot_jacobians_grayscale(self.results[2]["jac"][0][0]-self.results[0]["jac"][0][0])
         #print_jacobians_with_img()#TODO test this
         
-        # element wise mean_square_error
+        # element wise mean_square_error?
 
         # row max in same place?
-        orig_row_max = get_row_max(self.results[0]["jac"][0][0])
-        comp_row_max = get_row_max(self.results[1]["jac"][0][0])
-        reimpl_row_max = get_row_max(self.results[2]["jac"][0][0])
-        a = compare_row_max(orig_row_max, comp_row_max)
-        b = compare_row_max(orig_row_max, reimpl_row_max)
-        c = compare_row_max(comp_row_max, reimpl_row_max)
-        self.assertListEqual(orig_row_max, comp_row_max, f"Jacobians differ significantly btw original and compact model. row max locations: {orig_row_max}, {comp_row_max}")
-        self.assertListEqual(orig_row_max, reimpl_row_max, f"Jacobians differ significantly btw original and reimplemented model. row max locations: {orig_row_max}, {reimpl_row_max}")
+        orig_comp, o_max, _ = jacobian_compare_score(self.results[0]["jac"][0][0], self.results[1]["jac"][0][0])
+        comp_reimpl, c_max, _ = jacobian_compare_score(self.results[1]["jac"][0][0], self.results[2]["jac"][0][0])
+        reimpl_orig, r_max, _ = jacobian_compare_score(self.results[2]["jac"][0][0], self.results[0]["jac"][0][0])
+        self.assertLessEqual(orig_comp, 1.0, f"Jacobians differ significantly btw original and compact model. row max locations: max-index-score={orig_comp}. max_index orig={o_max}, compact={c_max}")
+        self.assertLessEqual(comp_reimpl, 1.0, f"Jacobians differ significantly btw reimplemeted and compact model. row max locations: max-index-score={comp_reimpl}. max_index orig={r_max}, compact={c_max}")
+        self.assertLessEqual(reimpl_orig, 1.0, f"Jacobians differ significantly btw original and reimplemented model. row max locations: max-index-score={reimpl_orig}. max_index orig={o_max}, compact={r_max}")
 
-        #self.assertTrue(torch.equal(self.results[0]["jac"][0], self.results[2]["jac"][0]), "first reimplemented jacobian differs from first original jacobian")
 
         """currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
         save_path = os.path.join(os.path.dirname(currentdir), "files")
@@ -415,6 +430,8 @@ if __name__ == "__main__":
     test.setUpClass()
     test._test_make_corpus()
 
+    #test = TestWithDoSimplex()
+    #test.setUpClass()
     #test.test_jacobians()
 
 

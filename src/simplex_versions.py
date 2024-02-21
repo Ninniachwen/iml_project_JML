@@ -233,7 +233,7 @@ class Simplex_Model(torch.nn.Module):
             # we only want positive weights
             weight = torch.nn.functional.normalize(abs(self.weight),dim=1)
             #print(self.weight[0].max())
-        elif mode=="nothing":  
+        elif mode=="nothing":
             # with this (using the weights without softmax) during training, the model seems to overfit - 
             # the r2 values are better, but the weights are very close together
             weight = self.weight

@@ -111,7 +111,7 @@ def jacobian_compare_score(a, b):
     a_max = get_row_max(a)
     b_max = get_row_max(b)
     diff = compare_row_max(a_max, b_max)
-    return sum(diff)/len(a)
+    return sum(diff)/len(a), a_max, b_max
 
 def create_input_baseline(corpus_shape):
     

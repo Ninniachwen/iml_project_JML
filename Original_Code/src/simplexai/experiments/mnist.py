@@ -18,11 +18,11 @@ import torch.optim as optim
 import torchvision
 from torch.utils.data import DataLoader, Dataset
 
-from simplexai.explainers.nearest_neighbours import NearNeighLatent
-from simplexai.explainers.representer import Representer
-from simplexai.explainers.simplex import Simplex
-from simplexai.models.image_recognition import MnistClassifier
-from simplexai.utils.schedulers import ExponentialScheduler
+from original_code.src.simplexai.explainers.nearest_neighbours import NearNeighLatent
+from original_code.src.simplexai.explainers.representer import Representer
+from original_code.src.simplexai.explainers.simplex import Simplex
+from original_code.src.simplexai.models.image_recognition import MnistClassifier
+from original_code.src.simplexai.utils.schedulers import ExponentialScheduler
 
 
 # Load data
