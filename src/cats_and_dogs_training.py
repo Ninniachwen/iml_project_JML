@@ -19,24 +19,31 @@ def train_model(
         batch_size_val: int = 128,
         random_seed: int = 42,
         learning_rate: float = 0.001,
-        val_split: float = 0.1
+        val_split: float = 0.1,
+        data_loader_shuffle = True
 )-> CatsandDogsClassifier:
-    """
-    Creates and trains the Cats and Dogs classifier model. Cross binary loss is used. Adam optimizer with a learning rate scheduler is used. 
-    Loss on test, validation and train set is printed. Accuracy on Validation and test_set is reported
-    :param save_path: Model is saved to save_path+"model_cad{cv}.pth". 
-    :param cv: model version
-    :param n_epoch: numbers of epochs for training
-    :param batch_size_train: training batch size, resetting can influence model and training performance
-    :param batch_size_test: testing batch size
-    :param batch_size_val: validation batch size
-    :param learning_rate: learning rate, resetting not recommended
-    :param val_split: portion of the training set used for validation. Values between 0.1 and 0.5 allowed  
+    """CatsandDogsClassifier training methods
+
+    Args:
+        save_path (Path): save path for model
+        cv (int): cross validation parameter, appends to the save path
+        n_epoch (int, optional): amount of training epochs. Defaults to 40.
+        batch_size_train (int, optional): batch size for the trainign set. Defaults to 128.
+        batch_size_test (int, optional): batch_size for the test set. Defaults to 128.
+        batch_size_val (int, optional): batch_size for the validation set. Defaults to 128.
+        random_seed (int, optional): random_seed for reproducibility. Defaults to 42.
+        learning_rate (float, optional): Learning rate for the Adam optimizer. Defaults to 0.001.
+        val_split (float, optional): relative size of the validation set. Defaults to 0.1.
+
+
+    Returns:
+        CatsandDogsClassifier: saved and trained CatsandDogsClassifier
     """
     # seeded and cudnn set to disabled for reproducibility 
-    torch.random.manual_seed(random_seed)
-    torch.backends.cudnn.enabled = False
-    
+    if random_seed:
+        torch.random.manual_seed(random_seed+cv)
+        torch.backends.cudnn.enabled = False
+    if val_split > 0.5 | val_split < 0: val_split=0.1
     #path to train and test directory 
     train_dir = r"data\Animal Images\train"
     test_dir = r"data\Animal Images\test"
@@ -46,34 +53,32 @@ def train_model(
     picture_files = [(picture, label) for picture,label in zip(picture_files,labels)]
 
     val_split = int(val_split*len(picture_files))
-
+    #perform a validation split
     train_files, val_files = random_split(picture_files, [len(picture_files) - val_split, val_split])
-    
+    #extraxt data and label fort rain and testset
     val_y = [label for _, label in val_files]
     val_x = [picture_file for picture_file, _ in val_files]
     train_y = [label for _, label in train_files]
     train_x = [picture_file for picture_file, _ in train_files]
-
+    #initialize train and validation set and laoders
     val_set = CandDDataSet(image_paths = val_x, labels = val_y, transform=transform_validate)
     train_set = CandDDataSet(image_paths = train_x, labels = train_y, transform=augment_image)
 
-    train_loader = DataLoader(train_set, batch_size_train, shuffle=True)
-    val_loader = DataLoader(val_set, batch_size_val, shuffle=False)
-
+    train_loader = DataLoader(train_set, batch_size_train, shuffle=data_loader_shuffle)
+    val_loader = DataLoader(val_set, batch_size_val, shuffle=data_loader_shuffle)
 
     picture_files, labels = get_images(test_dir)
-    
+    #initialize test set and laoder
     test_set = CandDDataSet(image_paths=picture_files, labels=labels)
     
-    test_loader = DataLoader(test_set, batch_size_test, shuffle=False)
-
+    test_loader = DataLoader(test_set, batch_size_test, shuffle=data_loader_shuffle)
     
     model = CatsandDogsClassifier()
 
-    optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate,)
+    optimizer = torch.optim.Adam(params=model.parameters(),lr=learning_rate)
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer)
-    
+    # binary cross entropy for two class classification problem
     lossF = torch.nn.BCELoss(reduction='mean')
 
     train_losses = []
@@ -101,7 +106,6 @@ def train_model(
         train_loss /= len(train_loader)
         train_losses.append(train_loss)
         print(f"Train epoch {epoch}, Training loss = {train_losses[-1]:.4f}")
-
 
     def validate():
         model.eval()
@@ -155,7 +159,7 @@ def train_model(
         validate()
         scheduler.step(val_losses[-1])
     test() 
-    
+    # save model 
     torch.save(model.state_dict(), os.path.join(save_path, f"model_cad_{cv}.pth"))
     return model
 
