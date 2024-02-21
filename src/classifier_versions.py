@@ -29,7 +29,21 @@ from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 SAVE_PATH=os.path.join(parentdir, "files")
 
 
-def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False, use_corpus_maker=False):
+def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False, use_corpus_maker=False) -> tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+    """
+    Loads the mnist classifier if one is stored or trains one instead. Also loads the mnist dataset
+
+    Args:
+        random_seed (int, optional): random seed for seeding the mnist model. Defaults to 42.
+        cv (int, optional): is added to random seed 42, to run experiments with different random seeds. used as identifier for stored models. Defaults to 0.
+        corpus_size (int, optional): How many images to use for corpus (explainer images). Defaults to 100.
+        test_size (int, optional): How many images to use for test_set (images that will be explained, using corpus). Defaults to 10.
+        random_dataloader (bool, optional): Whether samples random images or the same images in each run. Defaults to False.
+        use_corpus_maker (bool, optional): Whether to use the corpus maker (randomizing data). Defaults to False.#TODO: lucas, reicht die erklärung?
+
+    Returns:
+        tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]: classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents): Data is a tensor representation of one or more images. Target is an integer representing the images class. Latents are latent representation from the mnist classifier.
+    """
     # the following are standard values which are used in mnist.py to train mnistClassifier
     if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")):
         mnist.train_model(

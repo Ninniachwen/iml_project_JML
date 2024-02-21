@@ -17,7 +17,8 @@ def r_2_scores(classifier, latent_rep_approx:torch.Tensor, latent_rep_true:torch
 
 
 def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, corpus_data:torch.Tensor, corpus_targets:torch.Tensor, decompostion_size:int, weights:torch.Tensor) -> list[dict]:
-    """_summary_
+    """
+    
 
     Args:
         test_data (torch.Tensor): _description_
