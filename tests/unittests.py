@@ -1,10 +1,9 @@
 import inspect
-from math import isclose
+import numpy as np
 import os
 import sys
-import unittest
-import numpy as np
 import torch
+import unittest
 
 
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
@@ -12,7 +11,7 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
-from src.utils.utlis import plot_jacobians_grayscale, print_jacobians_with_img
+from src.utils.utlis import is_close_w_index, plot_jacobians_grayscale, print_jacobians_with_img
 import src.evaluation as e
 import src.simplex_versions as s
 import src.classifier_versions as c
@@ -20,28 +19,7 @@ import src.main as m
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
-
-def is_close_w_index(a:list[float], b:list[float]): 
-    """
-    source: https://stackoverflow.com/a/72291500/14934164
-    compares elements of 2 lists pairwise for numerical diff.
-    """
-    r=[]
-    # same length lists, use zip to iterate pairwise, use enumerate for index
-    for idx, (aa, bb) in enumerate(zip(a,b)):
-        # convert to floats
-        aaa = float(aa)
-        bbb = float(bb)
-
-        # append if not close
-        if not isclose(aaa,bbb):
-            r.append((idx, (aaa,bbb)))
-
-    # print results
-    for w in r:
-        print("On index {0} we have {1} != {2}".format(w[0],*w[1]), sep="\n")
-    
-    return True if r==[] else False
+from src.utils.image_finder_cats_and_dogs import LABEL, get_images
 
 class UnitTests(unittest.TestCase):
 
@@ -166,7 +144,7 @@ class UnitTests(unittest.TestCase):
     
     def test_r_2_scores(self):
         """
-        tests r_2_scores() from evaluation.py. r2 score schould be 1.0 for same img, and lower than 1.0 for different imgs. 
+        tests r_2_scores() from evaluation.py. r2 score schould be 1.0 for same tensors, and lower than 1.0 for different tensors. 
         """
         print(3*">" + "testing r2 scores")
         for dataloader in [c.train_or_load_mnist]:
@@ -174,7 +152,7 @@ class UnitTests(unittest.TestCase):
             c2, corpus2, test2 = dataloader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
         
             result = e.r_2_scores(c1, corpus1[2], corpus1[2])
-            self.assertEqual(result[0], 1.0, "score of original vs. original should be 1.0")
+            self.assertEqual(result[0], 1.0, "score of oidentical tensors should be 1.0")
 
             result = e.r_2_scores(c1, corpus1[2], corpus2[2])
             self.assertLess(result[0], 1.0)    # score of two different samples should not be 1.0

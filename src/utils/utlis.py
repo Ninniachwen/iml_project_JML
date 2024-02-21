@@ -1,4 +1,5 @@
 # directly from original code visualization/images.py
+from math import isclose
 from matplotlib import pyplot as plt
 import torch
 from captum.attr._utils.visualization import visualize_image_attr
@@ -73,3 +74,26 @@ def print_jacobians_with_img(weights:torch.tensor, test_id:int, corpus_data:torc
             title="Jacobian of most important corpus example",
             use_pyplot=True,
         )
+    
+
+def is_close_w_index(a:list[float], b:list[float]): 
+    """
+    source: https://stackoverflow.com/a/72291500/14934164
+    compares elements of 2 lists pairwise for numerical diff.
+    """
+    r=[]
+    # same length lists, use zip to iterate pairwise, use enumerate for index
+    for idx, (aa, bb) in enumerate(zip(a,b)):
+        # convert to floats
+        aaa = float(aa)
+        bbb = float(bb)
+
+        # append if not close
+        if not isclose(aaa,bbb):
+            r.append((idx, (aaa,bbb)))
+
+    # print results
+    for w in r:
+        print("On index {0} we have {1} != {2}".format(w[0],*w[1]), sep="\n")
+    
+    return True if r==[] else False

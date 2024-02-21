@@ -6,6 +6,8 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 import sys
 
+from src.cats_and_dogs_predictions import load_model
+
 # access model in parent dir: https://stackoverflow.com/a/11158224/14934164
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -14,7 +16,7 @@ sys.path.insert(0, "")
 
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
 from original_code.src.simplexai.experiments import mnist
-from src.cats_and_dogs_training import train_model, load_model
+from src.cats_and_dogs_training import train_model
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import get_images
