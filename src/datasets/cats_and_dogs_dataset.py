@@ -45,11 +45,9 @@ class CandDDataSet(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
         image_path = self.image_paths[idx]
         label = self.labels[idx] 
-        
-        image = Image.open(image_path)
-        image = self.transform(image)
+        if self.transform:
+            image = Image.open(image_path)
+            image = self.transform(image)
         return image, label

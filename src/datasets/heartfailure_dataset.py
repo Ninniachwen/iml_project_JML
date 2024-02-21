@@ -8,7 +8,7 @@ class HeartFailureDataset(Dataset):
     """
     def __init__(self, x, y) -> None:
         self.X = x
-        self.y = y.astype(int)
+        self.y = y
 
     def __len__(self):
         return len(self.X)

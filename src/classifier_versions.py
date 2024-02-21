@@ -14,9 +14,8 @@ sys.path.insert(0, "")
 
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
 from original_code.src.simplexai.experiments import mnist
-from src.cats_and_dogs_training import train_model
+from src.cats_and_dogs_training import train_model, load_model
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
-from src.cats_and_dogs_predictions import load_model
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import get_images
 from src.utils.corpus_creator import make_corpus
@@ -95,8 +94,9 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     datapath = r"data\heart.csv"
 
     x,y = load_data(datapath)
-    x_train, x_test, y_train, y_test = train_test_split(x,y,test_size=0.1,random_state=42,shuffle=True)
+    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=42, shuffle=True)
 
+    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=42, shuffle=random_dataloader)
     classifier = HeartFailureClassifier()
     file_w_path = os.path.join(SAVE_PATH, f"model_heartfailure_{cv}.pth")
     if not os.path.isfile(file_w_path):
@@ -105,8 +105,8 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     classifier.load_state_dict(torch.load(file_w_path))
     classifier.eval()
 
-    train_data = HeartFailureDataset(x_train,y_train)
-    test_data = HeartFailureDataset(x_test,y_test)
+    train_data = HeartFailureDataset(x_train, y_train)
+    test_data = HeartFailureDataset(x_test, y_test)
     
     train_loader = DataLoader(train_data, batch_size=50, shuffle=True)
     test_loader = DataLoader(test_data, batch_size=50, shuffle=True)
