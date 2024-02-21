@@ -2,21 +2,19 @@ import inspect
 import os
 import sys
 import torch
+from original_code.src.simplexai.models.image_recognition import MnistClassifier
 
-# access model in parent dir: https://stackoverflow.com/a/11158224/14934164
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
+sys.path.insert(0, "")
 from original_code.src.simplexai.utils.schedulers import ExponentialScheduler
 from original_code.src.simplexai.explainers.simplex import Simplex
 
 
+# values take from "approximate_quality" in mnist.py
 REG_FACTOR_INIT  = 0.1
 REG_FACTOR_FINAL = 100
 EPOCHS = 10000
 
-def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, input_baseline):  # Jasmin
-    # values take from "approximate_quality" in mnist.py
+def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:  # Jasmin
     reg_factor_scheduler = ExponentialScheduler(REG_FACTOR_INIT, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS)
     simplex = Simplex(corpus_examples=corpus_inputs,
             corpus_latent_reps=corpus_latents)
@@ -25,11 +23,11 @@ def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, dec
                 n_keep=decompostion_size,  # how many weights we want to keep in the end; keep all now to compare to own  model
                 n_epoch=EPOCHS,
                 reg_factor=REG_FACTOR_INIT,
-                reg_factor_scheduler=reg_factor_scheduler)      # test for ?
-    weights = simplex.weights   # test for shape=10,100 & requires_grad=False
+                reg_factor_scheduler=reg_factor_scheduler)
+    weights = simplex.weights
 
     # see mnist.py approximation_quality
-    latent_rep_approx = simplex.latent_approx()     # test for shape=10,50 & requires_grad=False
+    latent_rep_approx = simplex.latent_approx()
     
     # test unit -> if sum of top x weihgt adds up to at least ~90? or some other value a well trained original would have
 
@@ -38,7 +36,7 @@ def original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, dec
     return latent_rep_approx.detach(), weights.detach(), jacobian.detach()
 
 
-def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, input_baseline, softmax=True, regularisation=True):
+def compact_original_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor, test_inputs:torch.Tensor, test_latents:torch.Tensor, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor, softmax=True, regularisation=True) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     scheduler = ExponentialScheduler(x_init=0.1, x_final=REG_FACTOR_FINAL, n_epoch=EPOCHS)
     if regularisation:
         reg_factor = REG_FACTOR_INIT
@@ -49,13 +47,12 @@ def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_late
     W_0 = torch.zeros((test_latents.shape[0], corpus_inputs.shape[0]), requires_grad=True) 
     optimizer = torch.optim.Adam([W_0])
     for epoch in range(EPOCHS):
-        #TODO: from simplex
         optimizer.zero_grad()
         if softmax:
-            weights = torch.nn.functional.softmax(W_0, dim=-1)      # test for shape=10,100 & requires_grad=False
+            weights = torch.nn.functional.softmax(W_0, dim=-1)
         else:
             weights = W_0
-        corpus_latent_reps = torch.einsum("ij,jk->ik", weights, corpus_latents)     # test for shape=10,50 & requires_grad=False
+        corpus_latent_reps = torch.einsum("ij,jk->ik", weights, corpus_latents)
         error = ((corpus_latent_reps - test_latents) ** 2).sum()
         weights_sorted = torch.sort(weights)[0]
         regulator = (weights_sorted[:, : (corpus_inputs.shape[0] - decompostion_size)]).sum()
@@ -69,7 +66,6 @@ def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_late
             )
         reg_factor = scheduler.step(reg_factor)
     
-
     weights_softmax = torch.softmax(W_0, dim=-1).detach()
     # end of fit
 
@@ -78,14 +74,40 @@ def compact_original_model(corpus_inputs, corpus_latents, test_inputs, test_late
     else:
         latent_rep_approx = weights @ corpus_latents 
 
-    jacobian = []
+    jacobian = compact_jacobian_projections(corpus_inputs, corpus_latents, test_id, classifier, input_baseline)
     
-    #TODO:  jacobians
-    #TODO: detach jacobians too?
+    #TODO: jacobians
+    #TODO: detach jacobians too
     return latent_rep_approx.detach(), weights_softmax.detach(), jacobian.detach()
 
+def compact_jacobian_projections(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor, test_id:int, model:MnistClassifier, input_baseline:torch.Tensor, n_bins=100) -> torch.Tensor:  
+    """
+    Compute the Jacobian Projection for the test example identified by test_id
+    :param test_id: batch index of the test example
+    :param model: the black-box model for which the Jacobians are computed
+    :param input_baseline: the baseline input features
+    :param n_bins: number of bins involved in the Riemann sum approximation for the integral
+    :return:
+    """
+    corpus_data = corpus_inputs.clone().requires_grad_()
+    input_shift = corpus_inputs - input_baseline
+    latent_shift = corpus_latents[
+        test_id : test_id + 1
+    ] - model.latent_representation(input_baseline)
+    latent_shift_sqrdnorm = torch.sum(latent_shift**2, dim=-1, keepdim=True)
+    input_grad = torch.zeros(corpus_data.shape, device=corpus_data.device)
+    for n in range(1, n_bins + 1):
+        t = n / n_bins
+        input = input_baseline + t * (corpus_data - input_baseline)
+        latent_reps = model.latent_representation(input)
+        latent_reps.backward(gradient=latent_shift / latent_shift_sqrdnorm)
+        input_grad += corpus_data.grad
+        corpus_data.grad.data.zero_()
+    jacobian_projections = input_shift * input_grad / (n_bins)
+    return jacobian_projections
+
     
-def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents, decompostion_size, test_id, classifier, input_baseline, mode="softmax", weight_init_zero=True):
+def reimplemented_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor, test_inputs:torch.Tensor, test_latents:torch.Tensor, decompostion_size:int, test_id:int, classifier, input_baseline:torch.Tensor, mode="softmax", weight_init_zero=True) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Train our reimplemented simplex model.
 
     Parameters:
@@ -135,9 +157,6 @@ def reimplemented_model(corpus_inputs, corpus_latents, test_inputs, test_latents
 
     latent_rep_approx = simplex(corpus_latents, mode=mode) 
 
-    #TODO
-    input_baseline = torch.zeros(corpus_inputs.shape)  #TODO: also as global parameter? 
-
     jacobian = simplex.get_jacobian(test_id, corpus_inputs, test_latents, input_baseline, classifier)
 
     weights = weights_softmax
@@ -150,7 +169,7 @@ class Simplex_Model(torch.nn.Module):
     # idea: do the training done in "fit"-Function of "simplex.py" in an more intuitive way
     # in original code, they cut down the inputs to only keep the most important corpus examples ("n_keep") while training
     # here, we train as normal and later set the not important weights to 0
-    def __init__(self, size_corpus, size_test, weight_init_zero=True):
+    def __init__(self, size_corpus:int, size_test:int, weight_init_zero=True)->None:
         super().__init__()
         if weight_init_zero:
             # same as original
@@ -159,7 +178,7 @@ class Simplex_Model(torch.nn.Module):
             self.weight = torch.randn(size_test, size_corpus, requires_grad=True)
         # use basically a layer like torch.nn.Linear(size_corpus, size_test, bias=False)
 
-    def forward(self, x, mode="softmax"):
+    def forward(self, x:torch.Tensor, mode="softmax") ->torch.Tensor:
         # modes: softmax, normalize, nothing
         if mode=="softmax":
             weight = torch.nn.functional.softmax(self.weight,dim=1)
@@ -176,7 +195,8 @@ class Simplex_Model(torch.nn.Module):
         x = torch.matmul(weight, x)
         return x
     
-    def get_jacobian(self, test_id, corpus_inputs, test_latents, input_baseline, classifier):
+    #TODO: what type is classifier? can be any of three models
+    def get_jacobian(self, test_id:int, corpus_inputs:torch.Tensor, test_latents:torch.Tensor, input_baseline:torch.Tensor, classifier) -> torch.Tensor:
         # test_id: für welches test example die projections berechnet werden sollen
         latent_baseline = classifier.latent_representation(input_baseline)
         n_bins = 100 # standard in original

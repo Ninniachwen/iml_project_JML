@@ -1,19 +1,13 @@
 import os
-import inspect
 from torch.utils.data import DataLoader, random_split
 from pathlib import Path
 import torch
-import matplotlib.pyplot as plt
-
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
 
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.utils.image_finder_cats_and_dogs import get_images
-from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate, LABEL
-
+from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate
 
 
 def train_model(

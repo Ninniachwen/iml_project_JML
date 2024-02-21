@@ -3,23 +3,22 @@ import numpy as np
 import os
 import sys
 import torch
+from torch.utils.data import DataLoader
 import unittest
 
+sys.path.insert(0, "")
 
-# access model in parent dir: https://stackoverflow.com/a/11158224/14934164
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-
-from src.utils.utlis import is_close_w_index, plot_jacobians_grayscale, print_jacobians_with_img
-import src.evaluation as e
-import src.simplex_versions as s
-import src.classifier_versions as c
-import src.main as m
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
+import src.classifier_versions as c
+import src.evaluation as e
+import src.main as m
+import src.simplex_versions as s
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
+from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import LABEL, get_images
+from src.utils.corpus_creator import make_corpus
+from src.utils.utlis import is_close_w_index, plot_jacobians_grayscale, print_jacobians_with_img
 
 class UnitTests(unittest.TestCase):
 
@@ -116,7 +115,6 @@ class UnitTests(unittest.TestCase):
                 f"Test triple should contain a float32 tensor of length {test_size} as third item.\
                 got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")       
 
-      
     def test_shuffle_data_loader(self):
         """
         compare first element from loaded dataset.
@@ -140,33 +138,32 @@ class UnitTests(unittest.TestCase):
             # both shuffled, different first sample
             _, corpus4, test4 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
             self.assertFalse(torch.equal(corpus4[0][0], corpus3[0][0]), "mnist corpus loader is always shuffeling in the same way!")
-            self.assertFalse(torch.equal(test4[0][0], test3[0][0]), "mnist test loader is not always shuffeling in the same way!")
+            self.assertFalse(torch.equal(test4[0][0], test3[0][0]), "mnist test loader is not always shuffeling in the same way!")        
+    
+    # test make_corpus
+    # test corps loader class distribution
+    def test_make_corpus(self):
+        test_files = [f"{i}_test" for i in range(1000)]   
+        test_labels = [i%2 for i in range(100)]
+        dataset = CandDDataSet(image_paths=test_files, labels=test_labels, transform=None)
+        datalaoder = DataLoader(dataset=dataset, batch_size=1, shuffle=False)
+        corpus = make_corpus(datalaoder)
+        print("TODO: create with lucas")
     
     def test_r_2_scores(self):
         """
         tests r_2_scores() from evaluation.py. r2 score schould be 1.0 for same tensors, and lower than 1.0 for different tensors. 
         """
         print(3*">" + "testing r2 scores")
-        for dataloader in [c.train_or_load_mnist]:
-            c1, corpus1, test1 = dataloader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
-            c2, corpus2, test2 = dataloader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
-        
-            result = e.r_2_scores(c1, corpus1[2], corpus1[2])
-            self.assertEqual(result[0], 1.0, "score of oidentical tensors should be 1.0")
-
-            result = e.r_2_scores(c1, corpus1[2], corpus2[2])
-            self.assertLess(result[0], 1.0)    # score of two different samples should not be 1.0
-            #TODO: 2 images from same corpus
-        
+        c1, corpus1, test1 = c.train_or_load_mnist(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
+        c2, corpus2, test2 = c.train_or_load_mnist(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
     
-        # test make_corpus
-        # test corps loader class distribution
-        # def test_make_corpus():    
-        #     test_files = [f"{i}_test" for i in range(1000)]   
-        #     test_labels = [ i%2 for i in range(100)]
-        #     dataset = CandDDataSet(image_paths=test_files, labels=test_labels, transform=None)
-        #     datalaoder = DataLoader(dataset=dataset, batch_size=1, shuffle=False)
-        #     corpus = make_corpus(datalaoder)
+        result = e.r_2_scores(c1, corpus1[2], corpus1[2])
+        self.assertEqual(result[0], 1.0, "score of identical tensors should be 1.0")
+
+        result = e.r_2_scores(c1, corpus1[2], corpus2[2])
+        self.assertLess(result[0], 1.0, "score of two different samples should be less than 1.0")
+
 
 
     # edge cases für input var (testid > testset) size of corpus&test (10, 100, 1000) 
@@ -174,9 +171,45 @@ class UnitTests(unittest.TestCase):
     # exceptions datset & model
             
     # exception (decompsition > corpus)
+            
+    def _test_do_simplex():
+        print("this should not be executed")
+        # if 4x false, result should be tuple[torch.Tensor, None, None, None, None]
+        result = m.do_simplex(
+                    model_type=m.Model_Type.ORIGINAL,
+                    dataset=m.Dataset.MNIST,
+                    cv=0,
+                    decomposition_size=3,
+                    corpus_size=10,
+                    test_size=1,
+                    test_id=0,
+                    print_jacobians=False,
+                    r_2_scores=False,
+                    decompose=False,
+                    random_dataloader=False
+                )
+        
+        # return weights, latent_r2_score, output_r2_score, jacobian, decompostions
+        # tuple[torch.Tensor, list[float], list[float], torch.Tensor, list[dict]]
+        # for mnist, all model types should give valid return val
+        for d in m.Dataset.MNIST:
+            for mod in m.Model_Type:
+                result = m.do_simplex(
+                    model_type=mod,
+                    dataset=d,
+                    cv=0,
+                    decomposition_size=3,
+                    corpus_size=10,
+                    test_size=1,
+                    test_id=0,
+                    print_jacobians=False,
+                    r_2_scores=False,
+                    decompose=False,
+                    random_dataloader=False
+                )
 
     
-class TestDoSimplex(unittest.TestCase):
+class TestWithDoSimplex(unittest.TestCase):
     """
     This class tests other funktions, using do_simplex, because it handles the more complex input variables like classifier, dataset, ..
     It tests original_model(), compact_original_model() and reimplemented_model() in their basic (not ablation) funtionality from simplex_versions.py.

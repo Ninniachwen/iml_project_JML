@@ -1,10 +1,9 @@
-# directly from original code visualization/images.py
+from captum.attr._utils.visualization import visualize_image_attr
 from math import isclose
 from matplotlib import pyplot as plt
 import torch
-from captum.attr._utils.visualization import visualize_image_attr
 
-
+# directly from original code visualization/images.py
 def plot_mnist(data:torch.tensor, title: str = "") -> plt.Figure:
     """
     Plot given data as image.
@@ -97,3 +96,7 @@ def is_close_w_index(a:list[float], b:list[float]):
         print("On index {0} we have {1} != {2}".format(w[0],*w[1]), sep="\n")
     
     return True if r==[] else False
+
+def create_input_baseline(corpus_shape):
+    
+    return torch.zeros(corpus_shape)

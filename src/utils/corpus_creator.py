@@ -13,7 +13,7 @@ def make_corpus(corpus_loader: DataLoader, corpus_size=100, n_classes=2):
     labels = []
     labelk = [0]*n_classes
 
-    for data, label in corpus_loader:# do reservoir sampling
+    for data, label in corpus_loader: # do reservoir sampling
         for file, label in zip(data, label):
             labelk[label]+=1
             if(len(corpus_files)>=corpus_size):# if corpus is full replace random element with probability (corpus_size/2)/labelk[label]
