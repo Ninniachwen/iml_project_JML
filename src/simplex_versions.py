@@ -118,7 +118,7 @@ def compact_original_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tens
     else:
         latent_rep_approx = weights @ corpus_latents 
 
-    jacobian = compact_jacobian_projections(corpus_inputs, corpus_latents, test_id, classifier, input_baseline)
+    jacobian = compact_jacobian_projections(corpus_inputs, latent_rep_approx, test_id, classifier, input_baseline)
     
     return latent_rep_approx.detach(), weights_softmax.detach(), jacobian.detach()
 
@@ -131,8 +131,8 @@ def compact_jacobian_projections(corpus_inputs:torch.Tensor, corpus_latents:torc
     :param n_bins: number of bins involved in the Riemann sum approximation for the integral
     :return:
     """
-    corpus_data = corpus_inputs.clone().requires_grad_()
     input_shift = corpus_inputs - input_baseline
+    corpus_data = corpus_inputs.clone().requires_grad_()
     latent_shift = corpus_latents[
         test_id : test_id + 1
     ] - model.latent_representation(input_baseline)

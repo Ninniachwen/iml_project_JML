@@ -1,4 +1,5 @@
 import inspect
+import math
 import numpy as np
 import os
 import sys
@@ -19,6 +20,9 @@ from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import LABEL, get_images
 from src.utils.corpus_creator import make_corpus
 from src.utils.utlis import compare_row_max, get_row_max, is_close_w_index, jacobian_compare_score, plot_jacobians_grayscale, plot_mnist, print_jacobians_with_img
+from original_code.src.simplexai.experiments import mnist
+from src.datasets.heartfailure_dataset import HeartFailureDataset
+from src.heartfailure_prediction import load_data
 
 class UnitTests(unittest.TestCase):
 
@@ -151,25 +155,20 @@ class UnitTests(unittest.TestCase):
         count = [list(corpus[1]).count(i) for i in [0,1]]
         self.assertEqual(count, [50,50], "corpus does not have a 50/50 class distribution")
 
-        """  #TODO: Lucas: für heartFailure
-        image_paths, labels = get_images("data/Animal Images/test")
-        dataset = CandDDataSet(image_paths=image_paths, labels=labels)
-        datalaoder = DataLoader(dataset=dataset, batch_size=100, shuffle=False)
+        datapath = r"data\heart.csv"
+        x,y = load_data(datapath)
+        train_data = HeartFailureDataset(x, y)
+        datalaoder = DataLoader(train_data, batch_size=100)
         corpus = make_corpus(datalaoder, corpus_size=100)
         count = [list(corpus[1]).count(i) for i in [0,1]]
         self.assertEqual(count, [50,50], "corpus does not have a 50/50 class distribution")
-        """
-
-        """  #TODO: Lucas?: für Mnist
-        image_paths, labels = get_images("data/Animal Images/test")
-        dataset = CandDDataSet(image_paths=image_paths, labels=labels)
-        datalaoder = DataLoader(dataset=dataset, batch_size=100, shuffle=False)
-        corpus = make_corpus(datalaoder, corpus_size=100)
-        count = [list(corpus[1]).count(i) for i in [0,1]]
-        self.assertEqual(count, [50,50], "corpus does not have a 50/50 class distribution")
-        """
-
-
+        
+        datalaoder = mnist.load_mnist(batch_size=100, train=False)
+        corpus = make_corpus(datalaoder, corpus_size=100, n_classes=10)
+        classes = torch.unique(corpus[1])
+        count = [list(corpus[1]).count(i) for i in classes]
+        self.assertEqual(count, [100/len(classes) for i in classes], "corpus does not have a 50/50 class distribution")
+        
     def test_r_2_scores(self):
         """
         tests r_2_scores() from evaluation.py. r2 score schould be 1.0 for same tensors, and lower than 1.0 for different tensors. 
@@ -192,11 +191,31 @@ class UnitTests(unittest.TestCase):
             
     # exception (decompsition > corpus)
             
-    def _test_do_simplex():
+    def _test_do_simplex(self):
         #TODO: finish and activate
         print("this should not be executed")
+
         # if 4x false, result should be tuple[torch.Tensor, None, None, None, None]
-        result = m.do_simplex(
+        simplex_all_false = m.do_simplex(
+                    model_type=m.Model_Type.ORIGINAL,
+                    dataset=m.Dataset.MNIST,
+                    cv=0,
+                    decomposition_size=3,
+                    corpus_size=10,
+                    test_size=1,
+                    test_id=0,
+                    print_jacobians=False, #this is only a print toggle, the jacobians will still be created
+                    r_2_scores=False,
+                    decompose=False,
+                    random_dataloader=False
+                )
+        self.assertTrue(
+            (type(simplex_all_false[0])==type(simplex_all_false[3])==torch.Tensor)
+            & (simplex_all_false[1]==simplex_all_false[2]==simplex_all_false[4]==None), 
+            f"do_simplex should only return weights tensor and Nones in this setting. got {simplex_all_false}")
+        
+        # if test_size<3 then no r2 scores are created (restriciton from original simplex)
+        simplex_NaN = m.do_simplex(
                     model_type=m.Model_Type.ORIGINAL,
                     dataset=m.Dataset.MNIST,
                     cv=0,
@@ -205,16 +224,44 @@ class UnitTests(unittest.TestCase):
                     test_size=1,
                     test_id=0,
                     print_jacobians=False,
-                    r_2_scores=False,
-                    decompose=False,
+                    r_2_scores=True,
+                    decompose=True,
                     random_dataloader=False
                 )
+        self.assertTrue(
+            (type(simplex_NaN[0])==type(simplex_NaN[3])==torch.Tensor)
+            & math.isnan(simplex_NaN[1]) & (math.isnan(simplex_NaN[2]))
+            & (type(simplex_NaN[4])==list),
+            f"do_simplex should only return NaNs for r2 scores in this setting. got {simplex_NaN[1]} & {simplex_NaN[2]}")
         
         # return weights, latent_r2_score, output_r2_score, jacobian, decompostions
         # tuple[torch.Tensor, list[float], list[float], torch.Tensor, list[dict]]
         # for mnist, all model types should give valid return val
-        for d in m.Dataset.MNIST:
-            for mod in m.Model_Type:
+        for mod in m.Model_Type:
+            result = m.do_simplex(
+                model_type=mod,
+                dataset=m.Dataset.MNIST,
+                cv=0,
+                decomposition_size=3,
+                corpus_size=10,
+                test_size=3,
+                test_id=0,
+                print_jacobians=False,
+                r_2_scores=True,
+                decompose=True,
+                random_dataloader=True
+            )
+            self.assertTrue(
+                (type(result[0])==type(result[3])==torch.Tensor) 
+                & (type(result[1])==type(result[2])==np.float64)
+                & (type(result[4])==list), 
+                f"do_simplex should only return weights tensor and Nones in this setting ({mod}). got {result}")
+                
+        # return weights, latent_r2_score, output_r2_score, jacobian, decompostions
+        # tuple[torch.Tensor, list[float], list[float], torch.Tensor, list[dict]]
+        # for other Datasets, the first three (non Ablation) model types should give valid return val
+        for d in [m.Dataset.CaN, m.Dataset.Heart]:
+            for mod in list(m.Model_Type)[:3]:
                 result = m.do_simplex(
                     model_type=mod,
                     dataset=d,
@@ -228,6 +275,10 @@ class UnitTests(unittest.TestCase):
                     decompose=False,
                     random_dataloader=False
                 )
+                self.assertTrue(
+                    (type(result[0])==type(result[3])==torch.Tensor) 
+                    & (type(result[1])==type(result[2])==type(result[4])==list), 
+                    f"do_simplex should only return weights tensor and Nones in this setting ({mod}). got {result}")
 
     
 class TestWithDoSimplex(unittest.TestCase):
@@ -243,7 +294,6 @@ class TestWithDoSimplex(unittest.TestCase):
         print(10*"-" + "training our simplex" + 10*"-")
         
         models = [m.Model_Type.ORIGINAL, m.Model_Type.ORIGINAL_COMPACT, m.Model_Type.REIMPLEMENTED, m.Model_Type.REIMPLEMENTED]     # without ablation models, with extra reimplemented(decomp=100)
-        #self.simplex_model_functions = [c.original_model]#TODO, c.compact_original_model, c.reimplemented_model]
         self.decomposition_size = 5
         decomp = [5,5,5,100]
         self.corpus_size = 100
@@ -259,8 +309,8 @@ class TestWithDoSimplex(unittest.TestCase):
                 corpus_size = self.corpus_size,
                 test_size = self.test_size,
                 test_id = self.test_id,
-                r_2_scores=True, 
-                random_dataloader=False # we want the same sample set for each model to train on
+                r_2_scores=True,
+                random_dataloader=False, # we want the same sample set for each model to train on
                 )  
             self.results.append({"w": w, "lr2": lr2, "or2": or2, "jac": j, "dec":d})
             # weights, latent_r2_score, output_r2_score, jacobian, decompostions
@@ -342,51 +392,13 @@ class TestWithDoSimplex(unittest.TestCase):
         self.assertAlmostEqual(sum(self.reimpl100_weights), 1.0, delta=0.25, msg="reimplemented decomposition weights do not add up to 99%")
         
     def test_jacobians(self):
-        print("TODO: implement test_jacobians")# TODO: implement
-        # test original jacobian method against ours
-        plot_jacobians_grayscale(self.results[0]["jac"][0][0])
-        plot_jacobians_grayscale(self.results[1]["jac"][0][0])
-        plot_jacobians_grayscale(self.results[2]["jac"][0][0])
-        #plot_jacobians_grayscale(self.results[2]["jac"][0][0]-self.results[0]["jac"][0][0])
-        #print_jacobians_with_img()#TODO test this
-        
-        # element wise mean_square_error?
-
         # row max in same place?
         orig_comp, o_max, _ = jacobian_compare_score(self.results[0]["jac"][0][0], self.results[1]["jac"][0][0])
         comp_reimpl, c_max, _ = jacobian_compare_score(self.results[1]["jac"][0][0], self.results[2]["jac"][0][0])
         reimpl_orig, r_max, _ = jacobian_compare_score(self.results[2]["jac"][0][0], self.results[0]["jac"][0][0])
-        self.assertLessEqual(orig_comp, 1.0, f"Jacobians differ significantly btw original and compact model. row max locations: max-index-score={orig_comp}. max_index orig={o_max}, compact={c_max}")
+        self.assertLessEqual(orig_comp, 0.0, f"Jacobians differ significantly btw original and compact model. row max locations: max-index-score={orig_comp}. max_index orig={o_max}, compact={c_max}")
         self.assertLessEqual(comp_reimpl, 1.0, f"Jacobians differ significantly btw reimplemeted and compact model. row max locations: max-index-score={comp_reimpl}. max_index orig={r_max}, compact={c_max}")
         self.assertLessEqual(reimpl_orig, 1.0, f"Jacobians differ significantly btw original and reimplemented model. row max locations: max-index-score={reimpl_orig}. max_index orig={o_max}, compact={r_max}")
-
-
-        """currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-        save_path = os.path.join(os.path.dirname(currentdir), "files")
-        orig_mnist_classifier = MnistClassifier()
-        orig_mnist_classifier.load_state_dict(torch.load(os.path.join(save_path , f"model_cv{self.cv}.pth")))
-
-        original_jac = self.results[0]["jac"]
-        our_mnist_classifier, corpus, test_set = c.train_or_load_mnist(self.random_seed, cv=self.cv, corpus_size=self.corpus_size, test_size=self.test_size, random_dataloader=False)
-        test_id=0
-        corpus_inputs = corpus[0]
-        corpus_latents = corpus[2]
-        test_latents = test_set[2]
-        input_baseline = input_baseline = torch.zeros(corpus_inputs.shape)
-        original = s.Simplex(corpus_examples=corpus_inputs,
-            corpus_latent_reps=corpus_latents)
-        reimplemented = s.Simplex_Model(self.corpus_size, self.test_size, weight_init_zero=True)
-
-        self.assertEqual(
-            original.jacobian_projection(test_id=test_id, model=orig_mnist_classifier, input_baseline=input_baseline), 
-            original_jac, 
-            f"jacobian of original is inconsistent !")
-        self.assertEqual(
-            reimplemented.get_jacobian(test_id, corpus_inputs, test_latents, input_baseline, our_mnist_classifier), 
-            original_jac, 
-            f"jacobian of reimplementation ... !")"""
-        
-
 
     def test_decomposition_quality(self):
         """
@@ -415,24 +427,24 @@ class TestWithDoSimplex(unittest.TestCase):
         # check if same corpus-ids in decomposition
         self.assertListEqual(self.orig_c_ids, self.compact_c_ids, f"corpus id's in decomposition differ btw original and compact model: {self.orig_c_ids}, {self.compact_c_ids}")
         print(3*">" + "QUALITY: comparing corpus id's in decomp between original and reimplemented simplex")
-        self.assertListEqual(self.orig_c_ids, self.reimpl_c_ids, f"QUALITY: corpus id's in decomposition differ btw original and reimplemented model: {self.orig_c_ids}, {self.reimpl_c_ids}") #TODO: decomposition 100
-        #TODO unocmment test and explain why
+        self.assertListEqual(self.orig_c_ids, self.reimpl100_c_ids, f"QUALITY: corpus id's in decomposition differ btw original and reimplemented model: {self.orig_c_ids}, {self.reimpl100_c_ids}")
 
 
    
     # maybe test class-distr of classification against class-distr of decomposition
         
-    # does test_size influence simplex performance?
 
 if __name__ == "__main__":
     #unittest.main()
     test = UnitTests()
     test.setUpClass()
     test._test_make_corpus()
+    #test._test_do_simplex()
 
     #test = TestWithDoSimplex()
     #test.setUpClass()
     #test.test_jacobians()
+    
 
 
 # execute all tests via console from root dir using

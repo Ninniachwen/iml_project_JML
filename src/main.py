@@ -37,12 +37,11 @@ class Dataset(enum.Enum):
     Datasets that can be used in this setup. Each dataset comes with a classifier and dataloader.
     """
     MNIST = 1
-    #CaN = 2
-    #Heart = 3
-    #TODO: enable other models
+    CaN = 2
+    Heart = 3
 
 
-def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_scores=True, decompose=True, random_dataloader=True) -> tuple[torch.Tensor, None|list[float], None|list[float], None|torch.Tensor, None|list[dict]]:
+def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_scores=True, decompose=True, random_dataloader=True) -> tuple[torch.Tensor, None|list[float], None|list[float], torch.Tensor, None|list[dict]]:
     """
     Decide which simplex model we want to train with which dataset.
 
@@ -100,7 +99,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
 
     elif model_type is Model_Type.ORIGINAL_COMPACT:
         print(f"Starting on cv {cv} with the compact original model!")
-        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, input_baseline)
+        latent_rep_approx, weights, jacobian = s.compact_original_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, input_baseline, softmax=True)
     
     elif (model_type is Model_Type.O_C_NO_SOFTMAX) & (dataset is Dataset.MNIST):
         print(f"Starting on cv {cv} with the compact original model but without using softmax layer while training!")
