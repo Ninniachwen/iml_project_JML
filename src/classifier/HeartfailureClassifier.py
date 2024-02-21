@@ -42,3 +42,12 @@ class HeartFailureClassifier(BlackBox):
         x = self.fc4(x)
         x = self.sigmoid(x)
         return x
+    
+    def latent_to_presoftmax(self, h: torch.Tensor) -> torch.Tensor:
+        """
+        Maps a latent representation to a preactivation output
+        :param h: latent representations
+        :return: presoftmax activations
+        """
+        h = self.fc3(h)
+        return h

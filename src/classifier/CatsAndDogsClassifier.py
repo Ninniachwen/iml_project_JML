@@ -12,7 +12,6 @@ class CatsandDogsClassifier(BlackBox):
         self.conv1 = nn.Conv2d(1,16,3)
         self.pool = nn.MaxPool2d(2,2)
         self.conv2 = nn.Conv2d(16,32,3)
-        self.dropout_2 = nn.Dropout()
         self.relu= nn.ReLU()
         self.conv3 = nn.Conv2d(32,64,3)
         self.fc1 = nn.Linear(64*17*17,128)
@@ -43,6 +42,14 @@ class CatsandDogsClassifier(BlackBox):
         x = self.fc2(x)
         x = self.sigmoid(x)
         return x
+    
+    def latent_to_presoftmax(self, h: torch.Tensor) -> torch.Tensor:
+        """
+        Maps a latent representation to a preactivation output
+        :param h: latent representations
+        :return: presoftmax activations
+        """
+        return self.fc2(h)
     
     
 
