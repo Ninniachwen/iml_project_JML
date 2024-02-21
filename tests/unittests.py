@@ -10,6 +10,7 @@ import unittest
 sys.path.insert(0, "")
 
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
+from original_code.src.simplexai.experiments import mnist
 import src.classifier_versions as c
 import src.evaluation as e
 import src.main as m
@@ -17,12 +18,11 @@ import src.simplex_versions as s
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
-from src.utils.image_finder_cats_and_dogs import LABEL, get_images
-from src.utils.corpus_creator import make_corpus
-from src.utils.utlis import compare_row_max, get_row_max, is_close_w_index, jacobian_compare_score, plot_jacobians_grayscale, plot_mnist, print_jacobians_with_img
-from original_code.src.simplexai.experiments import mnist
 from src.datasets.heartfailure_dataset import HeartFailureDataset
 from src.heartfailure_prediction import load_data
+from src.utils.image_finder_cats_and_dogs import LABEL, get_images
+from src.utils.corpus_creator import make_corpus
+from src.utils.utlis import is_close_w_index, jacobian_compare_score, plot_jacobians_grayscale, plot_mnist, print_jacobians_with_img
 
 class UnitTests(unittest.TestCase):
 
@@ -34,6 +34,7 @@ class UnitTests(unittest.TestCase):
         self.corpus_size = 10
         self.test_size = 1
         self.test_id = 0
+        self.loaders = [c.train_or_load_mnist, c.train_or_load_heartfailure_model , c.train_or_load_CaD_model]
 
 
     def test_get_images(self):
@@ -64,11 +65,10 @@ class UnitTests(unittest.TestCase):
         tests train_or_load methods from classifier_versions.py. check if all loaders return classifier and correct format and types for corpus and test sets.
         """
         print(3*">" + "testing data loader format and type")
-        loaders = [c.train_or_load_mnist, c.train_or_load_heartfailure_model , c.train_or_load_CaD_model]
         types = [MnistClassifier, HeartFailureClassifier, CatsandDogsClassifier]
         corpus_size = 10
         test_size = 1
-        for loader in loaders:
+        for loader in self.loaders:
             result = loader(random_seed=self.random_seed, cv=0, corpus_size=corpus_size, test_size=test_size, random_dataloader=False)
             
             # base shape: triple
@@ -118,7 +118,7 @@ class UnitTests(unittest.TestCase):
                 & (result[2][2].dtype == torch.float32), 
                 f"Test triple should contain a float32 tensor of length {test_size} as third item.\
                 got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")     
-        print("test")  
+          
 
     def test_shuffle_data_loader(self):
         """
@@ -126,24 +126,24 @@ class UnitTests(unittest.TestCase):
         Testing train_or_load_mnist, train_or_load_CaD_model & train_or_load_heartfailure_model from classifier_versions.py
         """
         print(3*">" + "testing shuffle data loader")
-
-        for loader in [c.train_or_load_mnist, c.train_or_load_CaD_model, c.train_or_load_heartfailure_model]:
+        #TODO: Lucas: die neuen loader können das shuffeln nicht ausschalten 
+        for loader in self.loaders:
 
             # not shuffled, same first sample
             _, corpus1, test1 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=False)
             _, corpus2, test2 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=False)
-            self.assertTrue(torch.equal(corpus1[0][0], corpus2[0][0]), "mnist corpus loader is shuffeling!")
-            self.assertTrue(torch.equal(test1[0][0], test2[0][0]), "mnist test loader is shuffeling!")
+            self.assertTrue(torch.equal(corpus1[0][0], corpus2[0][0]), f"{loader} corpus loader is shuffeling!")
+            self.assertTrue(torch.equal(test1[0][0], test2[0][0]), f"{loader} test loader is shuffeling!")
 
             # one unshuffled, one shuffled, different first sample
             _, corpus3, test3 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
-            self.assertFalse(torch.equal(corpus1[0][0], corpus3[0][0]), "mnist corpus loader is not shuffeling!")
-            self.assertFalse(torch.equal(test1[0][0], test3[0][0]), "mnist test loader is not shuffeling!")
+            self.assertFalse(torch.equal(corpus1[0][0], corpus3[0][0]), f"{loader} corpus loader is not shuffeling!")
+            self.assertFalse(torch.equal(test1[0][0], test3[0][0]), f"{loader} test loader is not shuffeling!")
 
             # both shuffled, different first sample
             _, corpus4, test4 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
-            self.assertFalse(torch.equal(corpus4[0][0], corpus3[0][0]), "mnist corpus loader is always shuffeling in the same way!")
-            self.assertFalse(torch.equal(test4[0][0], test3[0][0]), "mnist test loader is not always shuffeling in the same way!")
+            self.assertFalse(torch.equal(corpus4[0][0], corpus3[0][0]), f"{loader} corpus loader is always shuffeling in the same way!")
+            self.assertFalse(torch.equal(test4[0][0], test3[0][0]), f"{loader} test loader is not always shuffeling in the same way!")
     
     # test make_corpus
     # test corps loader class distribution
@@ -293,9 +293,9 @@ class TestWithDoSimplex(unittest.TestCase):
     def setUpClass(self):
         print(10*"-" + "training our simplex" + 10*"-")
         
-        models = [m.Model_Type.ORIGINAL, m.Model_Type.ORIGINAL_COMPACT, m.Model_Type.REIMPLEMENTED, m.Model_Type.REIMPLEMENTED]     # without ablation models, with extra reimplemented(decomp=100)
+        models = [m.Model_Type.ORIGINAL, m.Model_Type.ORIGINAL_COMPACT, m.Model_Type.REIMPLEMENTED, m.Model_Type.REIMPLEMENTED]     # without ablation models, with extra model reimplemented(decomp=100)
         self.decomposition_size = 5
-        decomp = [5,5,5,100]
+        decomp = [5,5,5,100] # reimplemented100
         self.corpus_size = 100
         self.test_size = 10
         self.test_id = 0
@@ -311,7 +311,7 @@ class TestWithDoSimplex(unittest.TestCase):
                 test_id = self.test_id,
                 r_2_scores=True,
                 random_dataloader=False, # we want the same sample set for each model to train on
-                )  
+                )
             self.results.append({"w": w, "lr2": lr2, "or2": or2, "jac": j, "dec":d})
             # weights, latent_r2_score, output_r2_score, jacobian, decompostions
 
@@ -321,7 +321,7 @@ class TestWithDoSimplex(unittest.TestCase):
         self.orig_decomp = self.results[0]["dec"]
         self.compact_decomp = self.results[1]["dec"]
         self.rempl_decomp = self.results[2]["dec"]
-        self.rempl_decomp_100 = self.results[2]["dec"]
+        self.rempl_decomp_100 = self.results[3]["dec"]
         
         self.orig_weights = [self.orig_decomp[self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
         self.compact_weights = [self.compact_decomp[self.sample_id]["decomposition"][i]["c_weight"] for i in range(self.decomposition_size)]
@@ -384,12 +384,13 @@ class TestWithDoSimplex(unittest.TestCase):
 
         
         # decomposition should be identical for original & compact original
-        self.assertTrue(is_close_w_index(self.orig_weights, self.compact_weights))
-        self.assertTrue(is_close_w_index(self.orig_weights, self.reimpl100_weights))
+        self.assertTrue(is_close_w_index(self.orig_weights, self.compact_weights), "original_weights and compact_weights schould be identical, but arent")
+        self.assertTrue(is_close_w_index(self.orig_weights, self.reimpl100_weights), "original_weights and compact_weights schould be identical, but arent")
 
         # decomposition needs to add up to ~100% 
-        self.assertAlmostEqual(sum(self.orig_weights), 1.0, delta=0.01, msg="original decomposition weights do not add up to 99%")
-        self.assertAlmostEqual(sum(self.reimpl100_weights), 1.0, delta=0.25, msg="reimplemented decomposition weights do not add up to 99%")
+        self.assertAlmostEqual(sum(self.orig_weights), 1.0, delta=0.01, msg="original decomposition weights do not add up to at least 99%")
+        
+        self.assertAlmostEqual(sum(self.reimpl100_weights), 1.0, delta=0.25, msg="reimplemented decomposition weights do not add up to  at least 99%")
         
     def test_jacobians(self):
         # row max in same place?
@@ -435,10 +436,10 @@ class TestWithDoSimplex(unittest.TestCase):
         
 
 if __name__ == "__main__":
-    #unittest.main()
-    test = UnitTests()
-    test.setUpClass()
-    test._test_make_corpus()
+    unittest.main()
+    #test = UnitTests()
+    #test.setUpClass()
+    #test._test_make_corpus()
     #test._test_do_simplex()
 
     #test = TestWithDoSimplex()
