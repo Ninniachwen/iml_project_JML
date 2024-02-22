@@ -6,13 +6,7 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 import sys
 
-
-# access model in parent dir: https://stackoverflow.com/a/11158224/14934164
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-
 sys.path.insert(0, "")
-
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
 from original_code.src.simplexai.experiments import mnist
 from src.cats_and_dogs_predictions import load_model
@@ -25,7 +19,8 @@ from src.heartfailure_training import train_heartfailure_model, load_data
 from src.datasets.heartfailure_dataset import HeartFailureDataset
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 
-
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
 SAVE_PATH=os.path.join(parentdir, "files")
 
 
@@ -61,14 +56,17 @@ def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, ran
     # data loader from approximate_quality
     corpus_loader = mnist.load_mnist(corpus_size, train=True, shuffle=random_dataloader)
     test_loader = mnist.load_mnist(test_size, train=False, shuffle=random_dataloader)
-    batch_id_test , (test_data, test_targets) = next(enumerate(test_loader))
-    test_data = test_data.detach()
+    if use_corpus_maker:
+        corpus_data, corpus_target = make_corpus(corpus_loader, corpus_size=corpus_size, n_classes=10)
+        test_data, test_targets = make_corpus(test_loader, corpus_size=corpus_size, n_classes=10)
+    else:
+        batch_id_corpus, (corpus_data, corpus_target) = next(enumerate(corpus_loader))
+        corpus_data = corpus_data.detach()
+        batch_id_test, (test_data, test_targets) = next(enumerate(test_loader))
+        test_data = test_data.detach()
+        
     test_latents = classifier.latent_representation(test_data).detach()
-    batch_id_corpus, (corpus_data, corpus_target) = next(enumerate(corpus_loader))
-    corpus_data = corpus_data.detach()
     corpus_latents = classifier.latent_representation(corpus_data).detach()
-
-    #TODO: use corpus maker (Lucas)
 
     return classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents)
 

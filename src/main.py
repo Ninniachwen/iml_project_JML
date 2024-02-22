@@ -39,7 +39,7 @@ class Dataset(enum.Enum):
     MNIST = 1
     CaN = 2
     Heart = 3
-
+    MNIST_MakeCorpus = 4
 
 def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_scores=True, decompose=True, random_dataloader=True) -> tuple[torch.Tensor, None|list[float], None|list[float], torch.Tensor, None|list[dict]]|None:
     """
@@ -85,7 +85,12 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         classifier, corpus, test_set = c.train_or_load_heartfailure_model(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
         corpus_data, corpus_target, corpus_latents = corpus
         test_data, test_targets, test_latents = test_set
-    
+
+    elif dataset is Dataset.MNIST_MakeCorpus:
+        classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader, use_corpus_maker=True)
+        corpus_data, corpus_target, corpus_latents = corpus
+        test_data, test_targets, test_latents = test_set
+        
     else:
         raise Exception(f"'{dataset}' is no valid input for dataset")
     

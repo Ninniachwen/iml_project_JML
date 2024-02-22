@@ -8,9 +8,9 @@ To execute the tests for the ablation study, run the following command in the ro
 `python3 src/main.py -ablation` 
 
 ### Experiment setup
-We created the following models and modified versions of them to test on different parameters (see below):
+We created the following models and modified versions of them to test with different parameters (see below):
 1. original model 
-2. original compact model (*we rewrote the original code to a more compact form for testing purposes*)
+2. original compact model (*we rewrote the original code to a more compact form for ablation purposes*)
 3. reimplemented model
 4. model #3 without softmax layer
 5. model #3 with a standard normalization instead of the softmax layer
@@ -23,15 +23,15 @@ We created the following models and modified versions of them to test on differe
 We tested these models with the follwing parameters:
 TODO welche parameter wir schlussendlich nehmen
 
-We tested the models on the MNIST dataset. TODO: auf auf den anderen?
+We tested the models on the MNIST dataset. TODO: auch auf den anderen?
 
 When running the tests, we document:
 * the used model
 * the used paramenters
-* the achieved latent and output r2 score
+* the achieved latent and output r2 scores
 * the id of the most important corpus example (according the the chosen simplex model) for the given test id and the correspondig weights
 * the ids of the other important corpus examples (given by decomposition size), sorted by weights descendingly
-* the targets of all the impant corpus examples and the target of the test example
+* the targets of all the important corpus examples and the target of the test example
   
 Especially the with last point, we can observe how good the given explanations are. The intuition: the most important corpus examples should be the same target as our test example we want to explain, otherweise the simplex model is probably not that great (or the examples really look alike).
 

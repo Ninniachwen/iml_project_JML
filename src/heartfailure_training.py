@@ -24,7 +24,7 @@ def load_data(path):
     x['RestingECG'] = encoder.fit_transform(x['RestingECG'])
     x['ST_Slope'] = encoder.fit_transform(x['ST_Slope'])
     scaler = MinMaxScaler()
-    x = scaler.fit_transform(x)
+    x = scaler.fit_transform(x) #TODO: creates deprecation warning np.find_common_type is deprecated
     return x,y.values
 
 def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test, random_seed=None, cv=0, epochs=60, lr=0.001):
