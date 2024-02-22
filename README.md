@@ -1,18 +1,26 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/k0DpfI3g)
 # IML WS 23 Project
+
 ## Set up the environment
-Create a conda environment 
+Create a conda environment:
 
 `conda create env jml_simplex`
 
-Activate the environemnt
+Activate the environment:
 
 `conda activate jml_simplex`
 
-install all required packages
+Install all required packages:
 
 `pip install -r requirments.txt`
 
+Make sure that python3 is >= version 3.10 .
+
+## Reimplementation
+
+We reimplemented the model by introducing the class Simplex_Model, inheriting from torch.nn.Module. Our idea was to make the training of the Simplex model more intuitive than the original, where the training was done without using torch methods like "forward". 
+
+The model can be found in file `src/simplex_versions.py` .
 
 ## Ablation Study
 ### How to run
@@ -66,3 +74,12 @@ kurz zusammengefasst (später ausführlicher)
 
 ### Unit tests
  to execute unit tests, run `python -m tests.unittests` in root directory
+
+
+## Original Code
+
+The authors Jonathan Crabbé et al. published their original code on GitHub: https://github.com/JonathanCrabbe/Simplex. Their repository can be found in the folder "original_code". We changed only some relative import paths so our models can work.
+
+## Technical 
+
+The ablation study was done on a hp-Elitebook with a 11th Gen Intel® Core™ i7-1185G7 @ 3.00GHz × 8 CPU running Ubuntu 20. An experiment run with all 10 models types used for the ablation study took circa 30 seconds. The 54 combinations took accordingly about 30 minutes. There was no notable differente between training times of the different models. TODO eventuell anpassen

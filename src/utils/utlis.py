@@ -40,7 +40,7 @@ def plot_test_img_and_most_imp_explainer(weights:torch.tensor, corpus_data:torch
     """
     most_important_example = weights[test_id].argmax()  # for test example 0
     fig1 = plot_mnist(test_data[test_id][0], f"Test example {test_id}")
-    fig2 = plot_mnist(corpus_data[most_important_example][0], f"M.i. attribution to example 0 (corpus id {most_important_example})")
+    fig2 = plot_mnist(corpus_data[most_important_example][0], f"M.i. attribution to test example {test_id} (corpus id {most_important_example})")
     fig1.show()
     fig2.show()
 
@@ -75,7 +75,7 @@ def print_jacobians_with_img(weights:torch.tensor, test_id:int, corpus_data:torc
             image,
             method="blended_heat_map",
             sign="all",
-            title="Jacobian of most important corpus example",
+            title=f"Jacobian of most important corpus example (id {most_important_example}) for test example with id {test_id}",
             use_pyplot=True,
         )
     
