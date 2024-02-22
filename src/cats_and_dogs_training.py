@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader, random_split
 from pathlib import Path
 import torch
 
+from src.utils.utlis import CAD_TESTDIR,CAD_TRAINDIR
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
@@ -43,10 +44,10 @@ def train_model(
     if random_seed:
         torch.random.manual_seed(random_seed+cv)
         torch.backends.cudnn.enabled = False
-    if val_split > 0.5 | val_split < 0: val_split=0.1
+    if (val_split > 0.5) or (val_split < 0.05): val_split=0.1
     #path to train and test directory 
-    train_dir = r"data\Animal Images\train"
-    test_dir = r"data\Animal Images\test"
+    train_dir = CAD_TRAINDIR
+    test_dir = CAD_TESTDIR
 
     picture_files, labels = get_images(train_dir)
 
@@ -160,6 +161,6 @@ def train_model(
         scheduler.step(val_losses[-1])
     test() 
     # save model 
-    torch.save(model.state_dict(), os.path.join(save_path, f"model_cad_{cv}.pth"))
+    torch.save(model.state_dict(), os.path.join(save_path,"models", f"model_cad_{cv}.pth"))
     return model
 

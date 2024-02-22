@@ -1,18 +1,25 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder,MinMaxScaler
-from sklearn.model_selection import train_test_split
 import torch
 import os
+from pathlib import Path
+
+from typing import Tuple
 from torch.utils.data import DataLoader
 
+from sklearn.preprocessing import LabelEncoder,MinMaxScaler
+from sklearn.model_selection import train_test_split
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 from src.datasets.heartfailure_dataset import HeartFailureDataset     
 
 
-def load_data(path):
-    """
-    Loads and preprocesses data, encodes categorical data and performs minmax scaling
-    :param path: path to heartdisease csv file
+def load_data(path: Path)->Tuple[torch.Tensor,torch.Tensor]:
+    """loads and preprocesses trainign data
+
+    Args:
+        path (Path): _description_
+
+    Returns:
+        Tuple[torch.Tensor,torch.Tensor]: _description_
     """
     df = pd.read_csv(path)
     x = df.drop(columns=['HeartDisease'])
@@ -83,5 +90,5 @@ def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test,
         test()
         train(e)        
     test() 
-    torch.save(model.state_dict(), os.path.join(save_path, f"model_heartfailure_{cv}.pth"))
+    torch.save(model.state_dict(), os.path.join(save_path,"models", f"model_heartfailure_{cv}.pth"))
 
