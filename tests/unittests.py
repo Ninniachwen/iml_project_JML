@@ -194,7 +194,8 @@ class UnitTests(unittest.TestCase):
         """
 
         # exception datset
-        self.assertRaises(Exception, m.do_simplex(
+        with self.assertRaises(Exception) as context:
+            m.do_simplex(
                     model_type=m.Model_Type.ORIGINAL,
                     dataset="NON_EXISTING_DATASET",
                     cv=0,
@@ -206,10 +207,11 @@ class UnitTests(unittest.TestCase):
                     r_2_scores=False,
                     decompose=False,
                     random_dataloader=False
-                ), "do_simplex should raise an exception if an unknown dataset is given")
+                )
+        self.assertTrue('no valid input for dataset' in str(context.exception), "do_simplex should raise an exception if an unknown dataset is given")
         
         # wrong model-dataset-combination
-        self.assertEuqals(m.do_simplex(
+        self.assertEqual(m.do_simplex(
                     model_type=m.Model_Type.R_NORMALIZE_IWR,
                     dataset=m.Dataset.CaN,
                     cv=0,
@@ -224,7 +226,8 @@ class UnitTests(unittest.TestCase):
                 ),None , "do_simplex should return None if an invald dataset-model combination is given")
 
         # exception (decompsition > corpus)
-        self.assertRaises(Exception, m.do_simplex(
+        with self.assertRaises(Exception) as context:
+            m.do_simplex(
                     model_type=m.Model_Type.ORIGINAL,
                     dataset=m.Dataset.MNIST,
                     cv=0,
@@ -236,10 +239,12 @@ class UnitTests(unittest.TestCase):
                     r_2_scores=False,
                     decompose=False,
                     random_dataloader=False
-                ), "do_simplex should raise an exception if decomposition size is larger than corpus")
+                )
+            self.assertTrue('no valid input for dataset' in str(context.exception), "do_simplex should raise an exception if decomposition size is larger than corpus")
 
         # exception (test_id > test_size)
-        self.assertRaises(Exception, m.do_simplex(
+        with self.assertRaises(Exception) as context:
+            m.do_simplex(
                     model_type=m.Model_Type.ORIGINAL,
                     dataset=m.Dataset.MNIST,
                     cv=0,
@@ -251,7 +256,8 @@ class UnitTests(unittest.TestCase):
                     r_2_scores=False,
                     decompose=False,
                     random_dataloader=False
-                ), "do_simplex should raise an exception if test_id is larger than test_size")
+                )
+        self.assertTrue('no valid input for dataset' in str(context.exception), "do_simplex should raise an exception if test_id is larger than test_size")
 
             
     def test_do_simplex(self):
