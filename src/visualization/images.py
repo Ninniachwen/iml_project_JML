@@ -47,7 +47,7 @@ def plot_corpus_decomposition(test_image, corpus, weights, decomposition_length=
         return fig
 
 
-def plot_corpus_decomposition_with_jacobian(test_image, save_path, corpus, weights, jacobian, test_id, decomposition_length=0, title: str = "") -> plt.Figure:
+def plot_corpus_decomposition_with_jacobian(test_image, corpus, weights, jacobian, decomposition_length=0, title: str = "") -> plt.Figure:
     """
     Plots test image and corpus decomposition. Gives maximally 6 corpus images and jacobian coloration
     """
