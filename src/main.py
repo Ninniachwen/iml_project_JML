@@ -6,6 +6,7 @@ import os
 from time import strftime
 import torch
 import sys
+import time
 from pathlib import Path
 #TODO: check if requirements file is sufficient
 
@@ -13,7 +14,7 @@ sys.path.insert(0, "")
 import src.evaluation as e
 import src.simplex_versions as s
 import src.classifier_versions as c
-from src.utils.utlis import create_input_baseline, print_jacobians_with_img
+from src.utils.utlis import create_input_baseline, print_jacobians_with_img, plot_test_img_and_most_imp_explainer
 
 RANDOM_SEED=42
 
@@ -30,7 +31,7 @@ class Model_Type(enum.Enum):
     R_NO_SOFTMAX_IWR = 7  # like R_NO_SOFTMAX but use set initial weights with random values (for ablation)
     R_NORMALIZE_IWR = 8  # like R_NORMALIZE but use set initial weights with random values (for ablation)
     O_C_NO_SOFTMAX = 9  # use compact original (ORIGINAL_COMPACT) but without softmax layer during training (for ablation)
-    O_C_NO_REGULIZATION = 10  # use condensed original (ORIGINAL_COMPACT) but use no regularization during training (for ablation)
+    O_C_NO_REGULIZATION = 10  # use compact original (ORIGINAL_COMPACT) but use no regularization during training (for ablation)
 
 class Dataset(enum.Enum):
     """
@@ -41,26 +42,25 @@ class Dataset(enum.Enum):
     Heart = 3
     MNIST_MakeCorpus = 4
 
-def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, r_2_scores=True, decompose=True, random_dataloader=True) -> tuple[torch.Tensor, None|list[float], None|list[float], torch.Tensor, None|list[dict]]|None:
+def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, print_test_example=False, r_2_scores=True, decompose=True, random_dataloader=True) -> tuple[torch.Tensor, None|list[float], None|list[float], torch.Tensor, None|list[dict]]|None:
     """
     Decide which simplex model we want to train with which dataset.
 
     Parameters:
-        model_type (enum|int): ORIGINAL = 1, REIMPLEMENTED = 2, NO_REGULARIZATION = 3, TORCH_CONV = 4
-        corpus_inputs: Feature vector of Corpus examples; shape ?
-        corpus_latents: Latent representations of Corpus examples, run through according model; shape ?
-        test_inputs: Feature vector of Test examples; shape ?
-        test_latents: Latent representations of Test examples, run through according model; shape ?
-        classifier: the classifier used (only for output score)
-        cv: for seeding, see original code (cross validation parameter)
+        model_type (enum|int): the simplex model; see Model_Type Class above
+        dataset: which dataset to use; see Dataset Class above
+        decomposition_size; with how many corpus examples a test example should be explained
+        corpus_size: how many examples should be in the corpus.
+        test_size: how many test examples we want to explain.
+        test_id: what id of the test examples we want to explain.
+        print_jacobians: if we want to print the jacobians
+        print_test_example: if we want to print the test example and the according most important corpus example
+        r_2_scores: if we want to return the r2 scores
+        decompose: if we want to create a decomposition (see evaluation.py)
+        random_dataloader: if we want to load the data randomly
     
     Returns:
-        weights: Weights of the trained Model
-        latent_r2_score: r2 score of the learned representation
-        output_r2_score: r2 score of output (using original model) based on learned representation
-        #-no-# jacobian: the jacobian projection of the first element
-
-        The score-functions are taken directly from mnist.py of the original code
+        tuple[torch.Tensor, None or list[float], None or list[float], None or torch.Tensor, None or list[dict]] : weights, latent_r2_score, output_r2_score, jacobian, decompostions
     """
 
     assert corpus_size >= decomposition_size, "decomposition size can't be larger than corpus"
@@ -155,6 +155,8 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
 
     if print_jacobians:
         print_jacobians_with_img(weights, test_id, corpus_data, jacobian)
+    if print_test_example:
+        plot_test_img_and_most_imp_explainer(weights, corpus_data, test_data, test_id)
         
     
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions
@@ -268,6 +270,8 @@ def run_ablation():
     """Run the different models for different combinations of corpus size, test size, decomposition size, seeding (cv) and test_id"""
     # testing 540 combinations
     print("Run ablation study.")
+    print(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}")  # see https://stackoverflow.com/questions/415511/how-do-i-get-the-current-time-in-python
+    start_time = time.time()
     corpus_size = [50, 100]
     test_size = [10, 50]
     decomposition_size = [5, 10, 50, 100]
@@ -283,11 +287,14 @@ def run_ablation():
                         if id > (d-1):
                             pass
                         run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, filename="ablation_results.csv")
+    
+    print(f"End time: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}") 
+    print(f"The ablation study took {((time.time() - start_time) / 60):.0g} minutes.")
 
 
 def run_original_experiment():
     """
-    MNIST Approximation Quality Experiment as in paper and approximation_quality in original simplex
+    MNIST Approximation Quality Experiment as in paper and approximation_quality in original code (mnist.py)
     """
     decomposition_size = [3, 5, 10, 20, 50]
     cv = range(0,10) # the results from the paper were obtained by taking all integer CV between 0 and 9
@@ -307,7 +314,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-original",
         action="store_true",
-        help="Run the original study from the paper and save it \"/files/ablation_results.csv\"",
+        help="Run the original study from the paper and save it \"/files/approximation_quality_results.csv\"",
     )
     args = parser.parse_args()
     print(args)
@@ -323,9 +330,8 @@ if __name__ == "__main__":
 
     #TODO: join test_set into corpus and see what happens
    
-    # TODO: deal with different "to_keep" values of weights, alter funciton -> check exactly what is done with them in fit-method of simplex.py
     # TODO: introduce plotting; later: maybe add own model score to their plot (with the nearest neighbors?)
-    # TODO: plot the according pictures to get a better understanding
+
     # TODO: do own mnist classifier and train it in our own way? that will probably be some work. is it necessary? ->no(ML)
 
     # TODO: clean up code, obviously
