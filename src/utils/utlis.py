@@ -2,6 +2,11 @@ from captum.attr._utils.visualization import visualize_image_attr
 from math import isclose
 from matplotlib import pyplot as plt
 import torch
+import os
+
+CAD_TRAINDIR = os.path.join("data","Animal Images","train")
+CAD_TESTDIR = os.path.join("data","Animal Images","test")
+HEART_FAILURE_DIR = os.path.join("data","hearts.csv")
 
 # directly from original code visualization/images.py
 def plot_mnist(data:torch.tensor, title: str = "") -> plt.Figure:
