@@ -1,11 +1,24 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/k0DpfI3g)
 # IML WS 23 Project
+## Set up the environment
+Create a conda environment 
+
+`conda create env jml_simplex`
+
+Activate the environemnt
+
+`conda activate jml_simplex`
+
+install all required packages
+
+`pip install -r requirments.txt`
+
 
 ## Ablation Study
 ### How to run
 To execute the tests for the ablation study, run the following command in the root directory:
 
-`python3 src/main.py -ablation` 
+`python3 src/main.py -ablation`
 
 ### Experiment setup
 We created the following models and modified versions of them to test with different parameters (see below):
