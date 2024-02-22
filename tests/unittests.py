@@ -117,9 +117,8 @@ class UnitTests(unittest.TestCase):
                 & (len(result[2][2]) == test_size )
                 & (result[2][2].dtype == torch.float32), 
                 f"Test triple should contain a float32 tensor of length {test_size} as third item.\
-                got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")     
-          
-
+                got {type(result[2][2])}, {len(result[2][2])}, {result[2][2].dtype}")         
+ 
     def test_shuffle_data_loader(self):
         """
         compare first element from loaded dataset.
@@ -145,6 +144,7 @@ class UnitTests(unittest.TestCase):
             self.assertFalse(torch.equal(corpus4[0][0], corpus3[0][0]), f"{loader} corpus loader is always shuffeling in the same way!")
             self.assertFalse(torch.equal(test4[0][0], test3[0][0]), f"{loader} test loader is not always shuffeling in the same way!")
     
+    # TODO:edge cases für size of corpus&test (1, 2, 3, 10, 11, 100, 1000)
     def test_make_corpus(self):
         """
         test make_corpus class distribution
@@ -184,10 +184,6 @@ class UnitTests(unittest.TestCase):
         result = e.r_2_scores(c1, corpus1[2], corpus2[2])
         self.assertLess(result[0], 1.0, "score of two different samples should be less than 1.0")
 
-
-
-    # TODO:edge cases für input var (testid > testset) size of corpus&test (10, 100, 1000) 
-
     def test_exceptions(self):
         """
         test exception for wrong datset or None result dataset-model combination
@@ -208,7 +204,7 @@ class UnitTests(unittest.TestCase):
                     decompose=False,
                     random_dataloader=False
                 )
-        self.assertTrue('no valid input for dataset' in str(context.exception), "do_simplex should raise an exception if an unknown dataset is given")
+        self.assertTrue("no valid input for dataset" in str(context.exception), "do_simplex should raise an exception if an unknown dataset is given")
         
         # wrong model-dataset-combination
         self.assertEqual(m.do_simplex(
@@ -240,7 +236,7 @@ class UnitTests(unittest.TestCase):
                     decompose=False,
                     random_dataloader=False
                 )
-            self.assertTrue('no valid input for dataset' in str(context.exception), "do_simplex should raise an exception if decomposition size is larger than corpus")
+        self.assertTrue("decomposition size can't be larger than corpus" in str(context.exception), "do_simplex should raise an exception if decomposition size is larger than corpus")
 
         # exception (test_id > test_size)
         with self.assertRaises(Exception) as context:
@@ -248,8 +244,8 @@ class UnitTests(unittest.TestCase):
                     model_type=m.Model_Type.ORIGINAL,
                     dataset=m.Dataset.MNIST,
                     cv=0,
-                    decomposition_size=10,
-                    corpus_size=5,
+                    decomposition_size=3,
+                    corpus_size=10,
                     test_size=1,
                     test_id=2,
                     print_jacobians=False, #this is only a print toggle, the jacobians will still be created
@@ -257,7 +253,7 @@ class UnitTests(unittest.TestCase):
                     decompose=False,
                     random_dataloader=False
                 )
-        self.assertTrue('no valid input for dataset' in str(context.exception), "do_simplex should raise an exception if test_id is larger than test_size")
+        self.assertTrue("test_id can't be larger than test_size" in str(context.exception), "do_simplex should raise an exception if test_id is larger than test_size")
 
             
     def test_do_simplex(self):
