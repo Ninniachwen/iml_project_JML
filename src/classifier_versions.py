@@ -23,7 +23,7 @@ parentdir = os.path.dirname(currentdir)
 SAVE_PATH=os.path.join(parentdir, "files")
 
 
-def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False, use_corpus_maker=False) -> tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
+def train_or_load_mnist(random_seed:int = 42, cv: int = 0, corpus_size:int=100, test_size:int=10, random_dataloader: bool=False, use_corpus_maker=False) -> tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
     """
     Loads the mnist classifier if one is stored or trains one instead. Also loads the mnist dataset
 
@@ -71,10 +71,21 @@ def train_or_load_mnist(random_seed=42, cv=0, corpus_size=100, test_size=10, ran
     return classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents)
 
 
-def train_or_load_CaD_model(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):
+def train_or_load_CaD_model(random_seed: int=42, cv: int =0, corpus_size: int=100, test_size: int=10, random_dataloader: bool=False):
+    """trains or loads the CatsandDogsClassifier
 
+    Args:
+        random_seed (int, optional): random seed for reproducibility. Defaults to 42.
+        cv (int, optional): cross validation parameter. Defaults to 0.
+        corpus_size (int, optional): size of the corpus. Defaults to 100.
+        test_size (int, optional): size of the test set. Defaults to 10.
+        random_dataloader (bool, optional): If a random dataloader is used. Defaults to False.
+
+    Returns:
+        the trained clasiffier, (corpus data, coprus targets, corpus latent representations), (test data, test targets, test latent representations)
+    """
     torch.manual_seed(seed=random_seed)
-    
+    # train the model if not found
     if not os.path.isfile(os.path.join(SAVE_PATH,f"models/model_cad_{cv}.pth")):
         train_model(save_path=SAVE_PATH, cv=cv, random_seed=random_seed)
 
@@ -82,7 +93,7 @@ def train_or_load_CaD_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
     classifier.eval()
     
     test_dir = CAD_TESTDIR
-
+    
     picture_files, labels = get_images(test_dir)
     test_set = CandDDataSet(image_paths=picture_files, labels=labels)
     test_loader = DataLoader(test_set, batch_size=200, shuffle=random_dataloader)
@@ -102,16 +113,26 @@ def train_or_load_CaD_model(random_seed=42, cv=0, corpus_size=100, test_size=10,
     return classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents)
 
 
-def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test_size=10, random_dataloader=False):
+def train_or_load_heartfailure_model(random_seed: int=42, cv: int=0, corpus_size: int=100, test_size: int=10, random_dataloader: bool=False):
+    """trains or loads HeartfailureClassifier
+
+    Args:
+        random_seed (int, optional): random seed for reproducibility. Defaults to 42.
+        cv (int, optional): Cross validation parameter. Defaults to 0.
+        corpus_size (int, optional): size of the used corpus. Defaults to 100.
+        test_size (int, optional): size of the test set. Defaults to 10.
+        random_dataloader (bool, optional): If a random data loader is used. Defaults to False.
+
+    Returns:
+        the trained clasiffier, (corpus data, coprus targets, corpus latent representations), (test data, test targets, test latent representations)
+    """
     torch.manual_seed(random_seed)
 
     datapath = HEART_FAILURE_DIR
 
     x,y = load_data(datapath)
     x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=random_seed+cv, shuffle=random_dataloader)
-
-    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=random_seed+cv, shuffle=random_dataloader)
-    classifier = HeartFailureClassifier()
+    #trains model is not found
     if not os.path.isfile(os.path.join(SAVE_PATH,"models",f"model_heartfailure_{cv}.pth")):
         train_heartfailure_model(classifier, save_path=SAVE_PATH, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
 
