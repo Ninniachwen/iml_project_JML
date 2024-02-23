@@ -9,8 +9,7 @@ import sys
 sys.path.insert(0, "")
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
 from original_code.src.simplexai.experiments import mnist
-from src.cats_and_dogs_predictions import load_model
-from src.cats_and_dogs_training import train_model
+from src.cats_and_dogs_training import train_model, load_model
 from src.utils.utlis import CAD_TESTDIR,CAD_TRAINDIR, HEART_FAILURE_DIR
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.utils.image_finder_cats_and_dogs import get_images
@@ -109,9 +108,9 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
     datapath = HEART_FAILURE_DIR
 
     x,y = load_data(datapath)
-    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=42, shuffle=random_dataloader)
+    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=random_seed+cv, shuffle=random_dataloader)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=42, shuffle=random_dataloader)
+    x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=random_seed+cv, shuffle=random_dataloader)
     classifier = HeartFailureClassifier()
     if not os.path.isfile(os.path.join(SAVE_PATH,"models",f"model_heartfailure_{cv}.pth")):
         train_heartfailure_model(classifier, save_path=SAVE_PATH, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
@@ -138,6 +137,9 @@ def train_or_load_heartfailure_model(random_seed=42, cv=0, corpus_size=100, test
 
 
 if __name__ == "__main__":
-    train_or_load_mnist()
+    #train_or_load_mnist()
     train_or_load_heartfailure_model()
+    train_or_load_CaD_model(cv=0)
+    train_or_load_CaD_model(cv=1)
     train_or_load_CaD_model(cv=2)
+    

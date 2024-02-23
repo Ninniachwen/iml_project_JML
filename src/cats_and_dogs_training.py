@@ -2,13 +2,34 @@ import os
 from torch.utils.data import DataLoader, random_split
 from pathlib import Path
 import torch
+from typing import List
 
 from src.utils.utlis import CAD_TESTDIR,CAD_TRAINDIR
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
-from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
-from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.utils.image_finder_cats_and_dogs import get_images
-from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate
+from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate, LABEL
+
+
+def load_model(model_path: Path)-> CatsandDogsClassifier:
+    """laods the model from given path
+
+    Args:
+        model_path (Path): path to the model .pth file
+
+    Returns:
+        CatsandDogsClassifier: loaded Classifier
+    """
+    model = CatsandDogsClassifier()
+    model.load_state_dict(torch.load(model_path))
+    return model
+
+def get_classes_for_preds(preds: torch.Tensor)->List[str]:
+    pred_list = []
+    print(LABEL.keys())
+    for pred in preds:
+        pred = f"cat {pred:.2f}" if pred<0.5 else f"dog {(1-pred):.2f}"
+        pred_list.append(pred)
+    return pred_list
 
 
 def train_model(
@@ -43,7 +64,7 @@ def train_model(
     # seeded and cudnn set to disabled for reproducibility 
     if random_seed:
         torch.random.manual_seed(random_seed+cv)
-        torch.backends.cudnn.enabled = False
+        torch.backends.cudnn.deterministic = True
     if (val_split > 0.5) or (val_split < 0.05): val_split=0.1
     #path to train and test directory 
     train_dir = CAD_TRAINDIR

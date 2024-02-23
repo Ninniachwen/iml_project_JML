@@ -1,6 +1,7 @@
 import pandas as pd
 import torch
 import os
+import numpy as np
 from pathlib import Path
 
 from typing import Tuple
@@ -11,15 +12,15 @@ from sklearn.model_selection import train_test_split
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 from src.datasets.heartfailure_dataset import HeartFailureDataset     
 
-
+# pre processing steps from https://www.kaggle.com/code/yousefahmedsafyelidn/heart-failure-prediction-ann
 def load_data(path: Path)->Tuple[torch.Tensor,torch.Tensor]:
     """loads and preprocesses trainign data
 
     Args:
-        path (Path): _description_
+        path (Path): path to hearts.csv
 
     Returns:
-        Tuple[torch.Tensor,torch.Tensor]: _description_
+        Tuple[torch.Tensor,torch.Tensor]: preprocessed x and y values
     """
     df = pd.read_csv(path)
     x = df.drop(columns=['HeartDisease'])
@@ -34,17 +35,22 @@ def load_data(path: Path)->Tuple[torch.Tensor,torch.Tensor]:
     x = scaler.fit_transform(x) #TODO: creates deprecation warning np.find_common_type is deprecated
     return x,y.values
 
-def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test, random_seed=None, cv=0, epochs=60, lr=0.001):
-    """
-    trains the model on the heartfailure predictions dataset
-    :param model: NN for predictions
-    :param save_path: saving path
-    :param x_train: train data
-    :param y_train: train target
-    :param x_test: test data
-    :param y_test: test target
+def train_heartfailure_model(save_path: Path, x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray, y_test: np.ndarray, random_seed:int =None, cv:int =0, epochs:int=60, lr:float=0.001,random_dataloader: bool = True):
+    """Heartfailure model training method
 
+    Args:
+        save_path (Path): Path to folder for saving
+        x_train (np.ndarray): training data
+        y_train (np.ndarray): training labels
+        x_test (np.ndarray): test data
+        y_test (np.ndarray): test labels
+        random_seed (int, optional): random seed for repoducibility. Defaults to None.
+        cv (int, optional): cross-validation parameter. Defaults to 0.
+        epochs (int, optional): number of training epochs. Defaults to 60.
+        lr (float, optional): learning rate. Defaults to 0.001.
     """
+    model = HeartFailureClassifier()
+
     if random_seed:
         torch.manual_seed(seed=random_seed + cv)
 
@@ -53,8 +59,8 @@ def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test,
     train_data = HeartFailureDataset(x_train,y_train)
     test_data = HeartFailureDataset(x_test,y_test)
     
-    train_loader = DataLoader(train_data, batch_size=50, shuffle=True)
-    test_loader = DataLoader(test_data, batch_size=50, shuffle=True)
+    train_loader = DataLoader(train_data, batch_size=50, shuffle=random_dataloader)
+    test_loader = DataLoader(test_data, batch_size=50, shuffle=random_dataloader)
     lossF = torch.nn.BCELoss()
 
     def train(epoch):

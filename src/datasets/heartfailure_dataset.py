@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 
-# source: TODO
+# source: https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction/data
 class HeartFailureDataset(Dataset):
     """
     HeartFailure Dataset

@@ -6,7 +6,7 @@ import os
 
 CAD_TRAINDIR = os.path.join("data","Animal Images","train")
 CAD_TESTDIR = os.path.join("data","Animal Images","test")
-HEART_FAILURE_DIR = os.path.join("data","hearts.csv")
+HEART_FAILURE_DIR = os.path.join("data","heart.csv")
 
 # directly from original code visualization/images.py
 def plot_mnist(data:torch.tensor, title: str = "") -> plt.Figure:

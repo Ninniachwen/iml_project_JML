@@ -32,7 +32,7 @@ augment_image = v2.Compose([
     v2.Normalize(mean=[0.5,],std=[0.5,])
 ]) 
 
-
+#dataset from https://www.kaggle.com/datasets/unmoved/30k-cats-and-dogs-150x150-greyscale
 class CandDDataSet(Dataset):
     """
     Cats and dogs dataset class. 
