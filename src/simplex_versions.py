@@ -187,12 +187,16 @@ def reimplemented_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor,
     
     weights = simplex.weight.clone()
 
-    # TODO: nochmal checken: soll weights hier gesoftmaxt werden bevor man sie auf 0 setzt? ausprobieren
-    # TODO normalize funltioniert nicht wie es sein solle - ändere und mach händisch weights / weights.sum(dim=1) oder so? auch bei forward?
     if mode == "softmax":
         weights = torch.nn.functional.softmax(weights, dim=1)
     elif mode == "normalize":
-        weights = torch.nn.functional.normalize(abs(weights),dim=1)
+        weights = abs(weights) / abs(weights).sum(dim=1, keepdim=True)
+        weights = torch.nan_to_num(weights)
+    elif mode == "nothing":
+        # normalize weights so they sum up to 1 even when mode is "nothing" so the weights can be interpreted as percentages
+        # but do the normalization later so the model still has the correct weights
+        weights_sum = abs(weights).sum(dim=1, keepdim=True).clone()
+
 
     # manually set the weights which should not be in the decomposition to 0
     weight_id_irrelevant = weights.argsort()[:,:(size_corpus - decompostion_size)]
@@ -202,16 +206,13 @@ def reimplemented_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor,
 
     simplex.weight = weights
 
-
-
-   # weights_softmax = torch.nn.functional.softmax(simplex.weight, dim=1)
-
     latent_rep_approx = simplex(corpus_latents, mode="nothing") # because we softmaxed /normalized if already before
 
     jacobian = simplex.get_jacobian(test_id, corpus_inputs, test_latents, input_baseline, classifier)
 
-    #if mode == "softmax":  # 
-    #    weights = weights_softmax
+    if mode == "nothing":
+        # now to the normalization to get percentages
+        weights = abs(weights) / weights_sum
 
     return latent_rep_approx.detach(), weights.detach(), jacobian
 
@@ -235,8 +236,11 @@ class Simplex_Model(torch.nn.Module):
         if mode =="softmax":
             weight = torch.nn.functional.softmax(self.weight,dim=1)
         elif mode == "normalize":
-            # abs() because we only want positive weights
-            weight = torch.nn.functional.normalize(abs(self.weight),dim=1)
+            # try to normalize weights intuitively without softmax
+            # weights should always be positive (to be interpreted as percentage) and sum up to 1
+            weight = abs(self.weight) / abs(self.weight).sum(dim=1, keepdim=True)
+            # division through 0 throws no error, but writes "nan" accordingly
+            weight = torch.nan_to_num(weight) # replace nans with 0 
         elif mode=="nothing":  
             # with this (using the weights without softmax) during training, the model seems to overfit - 
             # the r2 values are better (with decomposition = 100), but the weights are very close together
