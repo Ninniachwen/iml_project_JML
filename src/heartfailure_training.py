@@ -32,7 +32,7 @@ def load_data(path: Path)->Tuple[torch.Tensor,torch.Tensor]:
     x['RestingECG'] = encoder.fit_transform(x['RestingECG'])
     x['ST_Slope'] = encoder.fit_transform(x['ST_Slope'])
     scaler = MinMaxScaler()
-    x = scaler.fit_transform(x) #TODO: creates deprecation warning np.find_common_type is deprecated
+    x = scaler.fit_transform(x)
     return x,y.values
 
 def train_heartfailure_model(save_path: Path, x_train: np.ndarray, y_train: np.ndarray, x_test: np.ndarray, y_test: np.ndarray, random_seed:int =None, cv:int =0, epochs:int=60, lr:float=0.001,random_dataloader: bool = True):

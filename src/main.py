@@ -8,12 +8,16 @@ import torch
 import sys
 import time
 from pathlib import Path
+import matplotlib.pyplot as plt
 #TODO: check if requirements file is sufficient
 
 sys.path.insert(0, "")
 import src.evaluation as e
 import src.simplex_versions as s
 import src.classifier_versions as c
+from src.visualization.images import plot_corpus_decomposition_with_jacobian
+from src.cats_and_dogs_training import get_classes_for_preds
+from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.utils.utlis import create_input_baseline, print_jacobians_with_img, plot_test_img_and_most_imp_explainer
 
 RANDOM_SEED=42
@@ -160,7 +164,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         plot_test_img_and_most_imp_explainer(weights, corpus_data, test_data, test_id)
         
     
-    return weights, latent_r2_score, output_r2_score, jacobian, decompostions
+    return weights, latent_r2_score, output_r2_score, jacobian, decompostions, test_data, corpus_data, classifier
 
 
 def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, no_ablation=False) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:
@@ -216,6 +220,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         "corpus_ids",
                         "corpus_weight",
                         "corpus_targets",
+                        "visualization"
                         ])
             
         models = list(Model_Type)[:3] if no_ablation else Model_Type
@@ -223,7 +228,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
         for d in datasets:
             for m in models:
                 print(f"   model: {m}, dataset: {d}")
-                weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
+                weights, latent_r2_score, output_r2_score, jacobian, decompostion, test_data, corpus_data, classifier = do_simplex(
                     model_type=m, 
                     dataset=d, 
                     cv=cv,
@@ -244,6 +249,45 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                 corpus_weights = [dec_c[i]["c_weight"] for i in range(decomposition_size)]
                 corpus_targest = [dec_c[i]["c_target"] for i in range(decomposition_size)]
                 time_stamp = strftime("%Y-%m-%d-%H:%M:%S", time.gmtime())
+                if d == Dataset.CaD:
+                    test_pred = classifier(test_data)
+                    test_pred = f"Cat: {1-test_pred[test_id].item():.4f}%" if test_pred[test_id].item()<0.5 else f"Dog: {test_pred[test_id].item():.4f}%"
+                    corpus_pred = []
+                    corpus_preds = classifier(corpus_data)
+                    for pred in corpus_preds:
+                        if pred <0.5:
+                            corpus_pred.append(f"Cat: {1-pred.item():.4f}%")
+                        else:
+                            corpus_pred.append(f"Dog: {pred.item():.4f}%")
+                    figure = plot_corpus_decomposition_with_jacobian(test_image=test_data[test_id],
+                                                                     test_pred=test_pred,
+                                                                     corpus=corpus_data,
+                                                                     corpus_preds=corpus_pred,
+                                                                     weights=weights[test_id],
+                                                                     jacobian=jacobian,
+                                                                     decomposition_length=decomposition_size)
+                    image_save_path = os.path.join("files","images",f"{d}_{cv}_{test_id}_{m}.png")
+                    figure.savefig(image_save_path)
+                elif d in [Dataset.MNIST,Dataset.MNIST_MakeCorpus]:
+                    test_pred = classifier.probabilities(test_data)
+                    pred = torch.argmax(test_pred, dim=1)
+                    test_pred = f"{pred[test_id]}: {test_pred[test_id][pred[test_id]]:.4f}"
+                    corpus_pred = []
+                    corpus_preds = classifier.probabilities(corpus_data)
+                    for c_pred in corpus_preds:
+                        max_arg = torch.argmax(c_pred, dim=0)
+                        corpus_pred.append(f"{max_arg}: {c_pred[max_arg]:.4f}")
+                    figure = plot_corpus_decomposition_with_jacobian(test_image=test_data[test_id],
+                                                                     test_pred=test_pred,
+                                                                     corpus=corpus_data,
+                                                                     corpus_preds=corpus_pred,
+                                                                     weights=weights[test_id],
+                                                                     jacobian=jacobian,
+                                                                     decomposition_length=decomposition_size)
+                    image_save_path = os.path.join("files","images",f"{d}_{cv}_{test_id}_{m}.png")
+                    figure.savefig(image_save_path)
+                else:
+                    image_save_path= "No visualization"
                 writer.writerow([
                     time_stamp, 
                     corpus_size, 
@@ -262,6 +306,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     corpus_ids,
                     corpus_weights,
                     corpus_targest,
+                    image_save_path
                     ])
 
     return weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions
