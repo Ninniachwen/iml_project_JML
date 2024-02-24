@@ -219,7 +219,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         ])
             
         models = list(Model_Type)[:3] if no_ablation else Model_Type
-        datasets = [list(Dataset)[2]] if no_ablation else [list(Dataset)[0]] #TODO remove [2]
+        datasets = list(Dataset) if no_ablation else [list(Dataset)[0]]
         for d in datasets:
             for m in models:
                 print(f"   model: {m}, dataset: {d}")
@@ -329,7 +329,6 @@ if __name__ == "__main__":
     elif args.all:
         run_all_experiments(no_ablation=True)
     else:
-        run_all_experiments(no_ablation=True) #TODO: for debugging, remove
         parser.print_help()
         parser.exit()
     print("Done")
