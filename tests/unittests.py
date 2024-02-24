@@ -125,7 +125,6 @@ class UnitTests(unittest.TestCase):
         Testing train_or_load_mnist, train_or_load_CaD_model & train_or_load_heartfailure_model from classifier_versions.py
         """
         print(3*">" + "testing shuffle data loader")
-        #TODO: Lucas: die neuen loader können das shuffeln nicht ausschalten 
         for loader in self.loaders:
 
             # not shuffled, same first sample
@@ -140,11 +139,10 @@ class UnitTests(unittest.TestCase):
             self.assertFalse(torch.equal(test1[0][0], test3[0][0]), f"{loader} test loader is not shuffeling!")
 
             # both shuffled, different first sample
-            _, corpus4, test4 = loader(self.random_seed, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
+            _, corpus4, test4 = loader(self.random_seed+1, self.test_id, self.corpus_size, self.test_size, random_dataloader=True)
             self.assertFalse(torch.equal(corpus4[0][0], corpus3[0][0]), f"{loader} corpus loader is always shuffeling in the same way!")
             self.assertFalse(torch.equal(test4[0][0], test3[0][0]), f"{loader} test loader is not always shuffeling in the same way!")
     
-    # TODO:edge cases für size of corpus&test (1, 2, 3, 10, 11, 100, 1000)
     def test_make_corpus(self):
         """
         test make_corpus class distribution
@@ -158,8 +156,8 @@ class UnitTests(unittest.TestCase):
 
         datapath = r"data\heart.csv"
         x,y = load_data(datapath)
-        train_data = HeartFailureDataset(x, y)
-        datalaoder = DataLoader(train_data, batch_size=100)
+        dataset = HeartFailureDataset(x, y)
+        datalaoder = DataLoader(dataset, batch_size=100)
         corpus = make_corpus(datalaoder, corpus_size=100)
         count = [list(corpus[1]).count(i) for i in [0,1]]
         self.assertEqual(count, [50,50], "corpus does not have a 50/50 class distribution")
@@ -209,7 +207,7 @@ class UnitTests(unittest.TestCase):
         # wrong model-dataset-combination
         self.assertEqual(m.do_simplex(
                     model_type=m.Model_Type.R_NORMALIZE_IWR,
-                    dataset=m.Dataset.CaN,
+                    dataset=m.Dataset.CaD,
                     cv=0,
                     decomposition_size=3,
                     corpus_size=10,
@@ -341,9 +339,9 @@ class UnitTests(unittest.TestCase):
                     random_dataloader=False
                 )
                 self.assertTrue(
-                    (type(result[0])==type(result[3])==torch.Tensor) 
+                    (type(result[0])==type(result[3])==torch.Tensor)
                     & (type(result[1])==type(result[2])==np.float64)
-                    & (type(result[4])==list), 
+                    & (type(result[4])==list),
                     f"do_simplex should return 2 tensors and 3 lists in this setting ({mod}, {d}). got {result}")
 
     
@@ -494,20 +492,16 @@ class TestWithDoSimplex(unittest.TestCase):
         # check if same corpus-ids in decomposition
         self.assertListEqual(self.orig_c_ids, self.compact_c_ids, f"corpus id's in decomposition differ btw original and compact model: {self.orig_c_ids}, {self.compact_c_ids}")
         print(3*">" + "QUALITY: comparing corpus id's in decomp between original and reimplemented simplex")
-        #self.assertListEqual(self.orig_c_ids, self.reimpl100_c_ids, f"QUALITY: corpus id's in decomposition differ btw original and reimplemented model: {self.orig_c_ids}, {self.reimpl100_c_ids}")
 
-
-   
     # TODO: maybe test class-distr of classification against class-distr of decomposition
-        
 
 if __name__ == "__main__":
-    #unittest.main()
-    test = UnitTests()
-    test.setUpClass()
-    test.test_exceptions()
-    #test._test_make_corpus()
-    #test._test_do_simplex()
+    unittest.main()
+    #test = UnitTests()
+    #test.setUpClass()
+    #test.test_shuffle_data_loader()
+    #test.test_make_corpus()
+    #test.test_do_simplex()
 
     #test = TestWithDoSimplex()
     #test.setUpClass()

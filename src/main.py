@@ -38,7 +38,7 @@ class Dataset(enum.Enum):
     Datasets that can be used in this setup. Each dataset comes with a classifier and dataloader.
     """
     MNIST = 1
-    CaN = 2
+    CaD = 2
     Heart = 3
     MNIST_MakeCorpus = 4
 
@@ -76,7 +76,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         corpus_data, corpus_target, corpus_latents = corpus
         test_data, test_targets, test_latents = test_set
         
-    elif dataset is Dataset.CaN:
+    elif dataset is Dataset.CaD:
         classifier, corpus, test_set = c.train_or_load_CaD_model(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
         corpus_data, corpus_target, corpus_latents = corpus
         test_data, test_targets, test_latents = test_set
@@ -140,7 +140,6 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     else:
         print(f"skipping '{model_type}'&'{dataset}' is no valid combination or no valid input for model_type")
         return None
-        #TODO: test for this exception
     
     latent_rep_true = test_latents
     
@@ -215,11 +214,11 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         "corpus_ids",
                         "corpus_weight",
                         "corpus_targets",
-                        #TODO: generate image of decomposition, store & link
                         ])
             
         models = list(Model_Type)[:3] if no_ablation else Model_Type
-        for d in Dataset:
+        datasets = list(Dataset)[0] if no_ablation else Dataset
+        for d in datasets:
             for m in models:
                 print(f"   model: {m}, dataset: {d}")
                 weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
@@ -261,7 +260,6 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     corpus_ids,
                     corpus_weights,
                     corpus_targest,
-                    #TODO: generate image of decomposition, store & link
                     ])
 
     return weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions
@@ -301,8 +299,7 @@ def run_original_experiment():
     for d in decomposition_size:
         for v in cv:    
             run_all_experiments(corpus_size=1000, test_size=100, decomposition_size=d, cv=v, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True)
-            #TODO: move return!!!
-            return
+    return
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="These arguments determine which set of experiments is executed.")
@@ -328,10 +325,6 @@ if __name__ == "__main__":
         parser.exit()
     print("Done")
 
-    #TODO: join test_set into corpus and see what happens
-   
-    # TODO: introduce plotting; later: maybe add own model score to their plot (with the nearest neighbors?)
 
-    # TODO: do own mnist classifier and train it in our own way? that will probably be some work. is it necessary? ->no(ML)
 
     # TODO: clean up code, obviously

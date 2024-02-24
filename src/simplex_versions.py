@@ -246,7 +246,6 @@ class Simplex_Model(torch.nn.Module):
         x = torch.matmul(weight, x)
         return x
     
-    #TODO: what type is classifier? can be any of three models
     def get_jacobian(self, test_id:int, corpus_inputs:torch.Tensor, test_latents:torch.Tensor, input_baseline:torch.Tensor, classifier) -> torch.Tensor:
         """Create jacobian projections for given test id. The jacobian projection was introduced
         by the authors of the paper and is basically a generalization of the integrated gradients."""

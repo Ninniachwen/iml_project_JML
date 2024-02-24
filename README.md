@@ -83,3 +83,8 @@ The authors Jonathan Crabbé et al. published their original code on GitHub: htt
 ## Technical 
 
 The ablation study was done on a hp-Elitebook with a 11th Gen Intel® Core™ i7-1185G7 @ 3.00GHz × 8 CPU running Ubuntu 20. An experiment run with all 10 models types used for the ablation study took circa 30 seconds. The 54 combinations took accordingly about 30 minutes. There was no notable differente between training times of the different models. TODO eventuell anpassen
+
+
+TODO: future works: join test_set into corpus and see what happens
+TODO: mention jacobian comparison score
+TODO: mention self explaining corpus

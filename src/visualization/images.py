@@ -71,7 +71,7 @@ def plot_corpus_decomposition_with_jacobian(test_image, corpus, weights, jacobia
         image = sorted_images[0].numpy().transpose(1,2,0)
         saliency = jacobian[0].numpy().transpose(1,2,0)
         ax = fig.add_subplot(gs[1])
-        visualize_image_attr(#TODO: finish
+        visualize_image_attr(
                 saliency,
                 image,
                 method="blended_heat_map",
@@ -91,11 +91,11 @@ def plot_corpus_decomposition_with_jacobian(test_image, corpus, weights, jacobia
             saliency = jacobian[index].numpy().transpose(1,2,0)
             title = f"Weight: {sorted_weights[index]*100:.2f}%"
             ax = fig.add_subplot(gs2[x,y])
-            visualize_image_attr(#TODO: finish
+            visualize_image_attr(
                 saliency,
                 image,
                 method="blended_heat_map",
-                sign="positive",
+                sign="all",
                 plt_fig_axis=(fig, ax),
                 title=title,
                 alpha_overlay=0.5,

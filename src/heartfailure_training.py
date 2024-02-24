@@ -34,7 +34,7 @@ def load_data(path: Path)->Tuple[torch.Tensor,torch.Tensor]:
     x = scaler.fit_transform(x) #TODO: creates deprecation warning np.find_common_type is deprecated
     return x,y.values
 
-def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test, random_seed=None, cv=0, epochs=60, lr=0.001):
+def train_heartfailure_model(model, save_path, x_train, y_train, x_test, y_test, random_seed=42, cv=0, epochs=60, lr=0.001):
     """
     trains the model on the heartfailure predictions dataset
     :param model: NN for predictions

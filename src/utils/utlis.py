@@ -6,7 +6,7 @@ import os
 
 CAD_TRAINDIR = os.path.join("data","Animal Images","train")
 CAD_TESTDIR = os.path.join("data","Animal Images","test")
-HEART_FAILURE_DIR = os.path.join("data","hearts.csv")
+HEART_FAILURE_DIR = os.path.join("data","heart.csv")
 
 # directly from original code visualization/images.py
 def plot_mnist(data:torch.tensor, title: str = "") -> plt.Figure:
@@ -112,7 +112,7 @@ def compare_row_max(a, b):
         diff.append(abs(a[i]-b[i]))
     return diff
 
-def jacobian_compare_score(a, b):
+def jacobian_compare_score(a:torch.Tensor, b:torch.Tensor):
     a_max = get_row_max(a)
     b_max = get_row_max(b)
     diff = compare_row_max(a_max, b_max)

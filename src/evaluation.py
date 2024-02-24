@@ -1,9 +1,7 @@
 import sklearn
 import torch
 
-#TODO: what type is classifier? one of three or only mnist?
 def r_2_scores(classifier, latent_rep_approx:torch.Tensor, latent_rep_true:torch.Tensor) -> list[float]:
-    #TODO: latent_to_presoftmax for other classifiers as well? (lucas)
     output_approx = classifier.latent_to_presoftmax(latent_rep_approx).detach()
     output_true = classifier.latent_to_presoftmax(latent_rep_true).detach()
     output_r2_score = sklearn.metrics.r2_score(
