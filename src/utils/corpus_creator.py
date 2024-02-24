@@ -3,17 +3,17 @@ from typing import Tuple
 import torch
 import random
 
-def make_corpus(corpus_loader: DataLoader, corpus_size=100, n_classes=2, random_seed=None) -> Tuple[torch.Tensor,torch.Tensor]:
+def make_corpus(corpus_loader: DataLoader, corpus_size=100, n_classes=2, random_seed:int=None) -> Tuple[torch.Tensor,torch.Tensor]:
     """Creates a corpus from a dataloader. Samples are choosen uniformly random
 
     Args:
         corpus_loader (DataLoader): dataloader, with corpus data to sample.
         corpus_size (int, optional): size of the corpus. Defaults to 100.
         n_classes (int, optional): number of classes. If it exceed the amount of files in the dataloader it sets to the size of the dataset in the dataloader. Defaults to 2.
-        random_seed (_type_, optional): random seed for reproducibility. Defaults to None.
+        random_seed (int, optional): random seed for reproducibility. Defaults to None.
 
     Returns:
-        List: _description_
+        Tuple[torch.Tensor,torch.Tensor]: tuple containing corpus data and target as tensors
     """
     if random_seed:
         random.seed(random_seed)
@@ -35,7 +35,7 @@ def make_corpus(corpus_loader: DataLoader, corpus_size=100, n_classes=2, random_
                     labels[corpus_1_indices[sample_index]]=label
                     
             else:     # fill corpus with files, keep class balance
-                if labels.count(label)<((corpus_size+1)//n_classes):#
+                if labels.count(label)<((corpus_size+1)//n_classes):
                     corpus_files.append(file)
                     labels.append(label)
                 else:

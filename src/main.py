@@ -129,11 +129,11 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         print(f"Starting on cv {cv} with our own reimplemented model but initializing weights at random!")
         latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, input_baseline, weight_init_zero=False)
     
-    elif (model_type is Model_Type.R_NO_SOFTMAX_IWR) & (dataset is Dataset.MNIST):
+    elif (model_type is Model_Type.R_NORMALIZE_IWR) & (dataset is Dataset.MNIST):
         print(f"Starting on cv {cv} with the compact original model but using normalize instead of softmax layer and initializing weights at random!")
         latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, input_baseline, mode="normalize", weight_init_zero=False)
         
-    elif (model_type is Model_Type.R_NORMALIZE_IWR) & (dataset is Dataset.MNIST):
+    elif (model_type is Model_Type.R_NO_SOFTMAX_IWR) & (dataset is Dataset.MNIST):
         print(f"Starting on cv {cv} with our own reimplemented model but without using softmax layer and initializing weights at random!")
         latent_rep_approx, weights, jacobian = s.reimplemented_model(corpus_data, corpus_latents, test_data, test_latents, decomposition_size, test_id, classifier, input_baseline, mode="nothing", weight_init_zero=False)
         
@@ -153,8 +153,10 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decomposition_size, weights)
 
     if print_jacobians:
+        # TODO: check if this works for other dataset
         print_jacobians_with_img(weights, test_id, corpus_data, jacobian)
     if print_test_example:
+        # TODO: check if this works for other dataset
         plot_test_img_and_most_imp_explainer(weights, corpus_data, test_data, test_id)
         
     
@@ -241,7 +243,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                 corpus_ids = [dec_c[i]["c_id"] for i in range(decomposition_size)]
                 corpus_weights = [dec_c[i]["c_weight"] for i in range(decomposition_size)]
                 corpus_targest = [dec_c[i]["c_target"] for i in range(decomposition_size)]
-                time_stamp = strftime("%Y-%m-%d-%H:%M:%S")
+                time_stamp = strftime("%Y-%m-%d-%H:%M:%S", time.gmtime())
                 writer.writerow([
                     time_stamp, 
                     corpus_size, 
@@ -266,7 +268,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
 
 def run_ablation():
     """Run the different models for different combinations of corpus size, test size, decomposition size, seeding (cv) and test_id"""
-    # testing 540 combinations
+    # testing 560 combinations
     print("Run ablation study.")
     print(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}")  # see https://stackoverflow.com/questions/415511/how-do-i-get-the-current-time-in-python
     start_time = time.time()

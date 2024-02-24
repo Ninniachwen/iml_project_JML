@@ -126,7 +126,6 @@ original_code/notebooks/*
 original_code/example_similarity/*
 */archived*
 original_code/data
-*.pth
 *.pkl
 *.pdf
 
