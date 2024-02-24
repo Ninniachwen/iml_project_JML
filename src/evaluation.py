@@ -35,16 +35,21 @@ def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, cor
         sample_weights = weights[s_id].numpy()
         top_x_ids:list[int] = sample_weights.argsort()[-decompostion_size:][::-1]
 
+        if(len(corpus_data.shape) == 4):
+            size = [sample.shape[1], sample.shape[2]]
+        else:
+            size = [sample.shape[0]]
+
         decompostion = []
         for w_id in top_x_ids:
             decompostion.append({
                 "c_id":w_id,
                 "c_weight": sample_weights[w_id], 
-                "c_img": corpus_data[w_id].reshape([sample.shape[1], sample.shape[2]]), 
+                "c_img": corpus_data[w_id].reshape(size),
                 "c_target": corpus_targets[w_id].item()})
         
         per_sample = {"sample_id": s_id,
-                      "img" : sample.reshape([sample.shape[1],sample.shape[2]]),
+                      "img" : sample.reshape(size),
                       "target" : target.item(),
                       "decomposition" : decompostion
                       }

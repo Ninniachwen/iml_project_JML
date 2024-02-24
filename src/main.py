@@ -219,7 +219,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         ])
             
         models = list(Model_Type)[:3] if no_ablation else Model_Type
-        datasets = list(Dataset)[0] if no_ablation else Dataset
+        datasets = [list(Dataset)[2]] if no_ablation else [list(Dataset)[0]] #TODO remove [2]
         for d in datasets:
             for m in models:
                 print(f"   model: {m}, dataset: {d}")
@@ -308,12 +308,17 @@ if __name__ == "__main__":
     parser.add_argument(
         "-ablation",
         action="store_true",
-        help="Run the tests for the ablation study and save it \"/files/ablation_results.csv\"",
+        help="Run the tests for the ablation study and save it in \"/files/ablation_results.csv\"",
     )
     parser.add_argument(
         "-original",
         action="store_true",
-        help="Run the original study from the paper and save it \"/files/approximation_quality_results.csv\"",
+        help="Run the original study from the paper and save it in \"/files/approximation_quality_results.csv\"",
+    )
+    parser.add_argument(
+        "-all",
+        action="store_true",
+        help="Run experiments over all 4 datasets (4. is mnist with corpus_maker) and all 3 non-ablation simplex models and save it in \"/files/comparison_results.csv\"",
     )
     args = parser.parse_args()
     print(args)
@@ -321,12 +326,12 @@ if __name__ == "__main__":
         run_ablation()
     elif args.original:
         run_original_experiment()
-    else:
+    elif args.all:
         run_all_experiments(no_ablation=True)
+    else:
+        run_all_experiments(no_ablation=True) #TODO: for debugging, remove
         parser.print_help()
         parser.exit()
     print("Done")
-
-
 
     # TODO: clean up code, obviously
