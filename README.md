@@ -50,7 +50,7 @@ TODO Kontrolle ob alles so passt
 ## Set up the environment
 Create a conda environment:
 
-`conda create -n "jml_simplex" python=3.10`
+`conda create -n jml_simplex python=3.10`
 
 Activate the environment:
 
@@ -99,8 +99,9 @@ TODO: why is this dataset interesting for the project
 
 ## Extensions of the Approach
 
-We extended the approach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance.
-Furthermore, we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments. They can be found in files/images.
+We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance. It performs reservoir sampling to sample uniformly random.
+Furthermore, we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments. They can be found in files/images and some are visible on the poster. 
+They provide weights of the corpus examples as well as the true prediction of the classifer, indicating the confidence of the classifer for the prediction.
 
 
 ## Ablation Study

@@ -7,7 +7,7 @@ from typing import List
 from src.utils.utlis import CAD_TESTDIR,CAD_TRAINDIR
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.utils.image_finder_cats_and_dogs import get_images
-from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate, LABEL
+from src.datasets.cats_and_dogs_dataset import CandDDataSet, augment_image, transform_validate
 
 
 def load_model(model_path: Path)-> CatsandDogsClassifier:
@@ -22,15 +22,6 @@ def load_model(model_path: Path)-> CatsandDogsClassifier:
     model = CatsandDogsClassifier()
     model.load_state_dict(torch.load(model_path))
     return model
-
-def get_classes_for_preds(preds: torch.Tensor)->List[str]:
-    pred_list = []
-    print(LABEL.keys())
-    for pred in preds:
-        pred = f"cat {pred:.2f}" if pred<0.5 else f"dog {(1-pred):.2f}"
-        pred_list.append(pred)
-    return pred_list
-
 
 def train_model(
         save_path: Path,
@@ -77,7 +68,7 @@ def train_model(
     val_split = int(val_split*len(picture_files))
     #perform a validation split
     train_files, val_files = random_split(picture_files, [len(picture_files) - val_split, val_split])
-    #extraxt data and label fort rain and testset
+    #extraxt data and label for train and testset
     val_y = [label for _, label in val_files]
     val_x = [picture_file for picture_file, _ in val_files]
     train_y = [label for _, label in train_files]
