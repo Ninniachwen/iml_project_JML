@@ -20,7 +20,7 @@ from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-SAVE_PATH=os.path.join(parentdir, "files")
+SAVE_PATH=os.path.join(parentdir, "files", "models")
 
 
 def train_or_load_mnist(random_seed:int = 42, cv: int = 0, corpus_size:int=100, test_size:int=10, random_dataloader: bool=False, use_corpus_maker=False) -> tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
@@ -53,12 +53,12 @@ def train_or_load_mnist(random_seed:int = 42, cv: int = 0, corpus_size:int=100, 
     classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")))
     classifier.eval()
 
-    # data loader from approximate_quality
+    # data loader from approximate_quality of mnist.py of original code
     corpus_loader = mnist.load_mnist(corpus_size, train=True, shuffle=random_dataloader)
     test_loader = mnist.load_mnist(test_size, train=False, shuffle=random_dataloader)
     if use_corpus_maker:
-        corpus_data, corpus_target = make_corpus(corpus_loader, corpus_size=corpus_size, n_classes=10)
-        test_data, test_targets = make_corpus(test_loader, corpus_size=corpus_size, n_classes=10)
+        corpus_data, corpus_target = make_corpus(corpus_loader, corpus_size=corpus_size, n_classes=10, random_seed=random_seed)
+        test_data, test_targets = make_corpus(test_loader, corpus_size=corpus_size, n_classes=10, random_seed=random_seed)
     else:
         batch_id_corpus, (corpus_data, corpus_target) = next(enumerate(corpus_loader))
         corpus_data = corpus_data.detach()
@@ -86,10 +86,10 @@ def train_or_load_CaD_model(random_seed: int=42, cv: int =0, corpus_size: int=10
     """
     torch.manual_seed(seed=random_seed)
     # train the model if not found
-    if not os.path.isfile(os.path.join(SAVE_PATH,f"models/model_cad_{cv}.pth")):
+    if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cad_{cv}.pth")):
         train_model(save_path=SAVE_PATH, cv=cv, random_seed=random_seed)
 
-    classifier = load_model(os.path.join(SAVE_PATH,f"models/model_cad_{cv}.pth"))
+    classifier = load_model(os.path.join(SAVE_PATH,f"model_cad_{cv}.pth"))
     classifier.eval()
     
     test_dir = CAD_TESTDIR
@@ -133,11 +133,11 @@ def train_or_load_heartfailure_model(random_seed: int=42, cv: int=0, corpus_size
     x,y = load_data(datapath)
     x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=random_seed+cv, shuffle=random_dataloader)
     #trains model if not found
-    if not os.path.isfile(os.path.join(SAVE_PATH,"models",f"model_heartfailure_{cv}.pth")):
+    if not os.path.isfile(os.path.join(SAVE_PATH,f"model_heartfailure_{cv}.pth")):
         train_heartfailure_model(save_path=SAVE_PATH, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
 
     classifier = HeartFailureClassifier()
-    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH, "models",f"model_heartfailure_{cv}.pth")))
+    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,f"model_heartfailure_{cv}.pth")))
     classifier.eval()
 
     train_data = HeartFailureDataset(x_train, y_train)
