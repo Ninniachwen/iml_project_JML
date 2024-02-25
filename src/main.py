@@ -175,10 +175,9 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions, test_data, corpus_data, classifier
 
 
-def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, no_ablation=True, plot_decomposition=True, datasets:list=list(Dataset)) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:#TODO update
+def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, plot_decomposition=True, datasets=list(Dataset), models=list(Model_Type)[:3]) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:#TODO update
     """
     runs all experiments over different sets of models and datasets, depending on settings.
-    no_ablation=True: first 3 simplex models, and all 4 datasets.  no_ablation=False: like ablation study, over all simplex models, including ablation versions, but only on mnist dataset.
 
     Args:
         corpus_size (int, optional): How many images to use for corpus (explainer images). Defaults to 100.
@@ -189,7 +188,8 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
         filename (str, optional): filename to use for the results of this round of experiments. Defaults to "comparison_results.csv".
         random_dataloader (bool, optional): Whether samples random images or the same images in each run. Defaults to False.
         plot_decomposition (bool, optional): whether the created decompositions are plotted. Defaults to True.
-        datasets (list|None, optional): a list of selected datasets from enum Dataset. Defaults to a list of all datasets from the enum.
+        datasets (list, optional): a list of selected datasets from enum Dataset. Defaults to a list of all datasets from the enum.
+        models (list, optional): a list of selected simplex models from enum Model_types. Defaults to a list of first 3 models from the enum.
 
     Returns:
         tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]: returns weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions. 
@@ -231,10 +231,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         "corpus_targets",
                         "visualization"
                         ])
-            
-        models = list(Model_Type)[:3] if no_ablation else Model_Type
-        if not datasets:
-            datasets = list(Dataset) if no_ablation else [list(Dataset)[0]]
+        
         for d in datasets:
             for m in models:
                 print(f"   model: {m}, dataset: {d}")
@@ -341,7 +338,7 @@ def run_ablation():
                     for id in test_id:
                         if id > (d-1):
                             continue
-                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, filename="ablation_results.csv")
+                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, filename="ablation_results.csv", models=Model_Type, datasets=Dataset.MNIST)
     
     print(f"End time: {strftime('%Y-%m-%d %H:%M:%S', gmtime())}") 
     print(f"The ablation study took {((time() - start_time) / 60):.0g} minutes.")
@@ -370,7 +367,7 @@ def run_original_experiment():
     # execute experiments for all decomposition sizes, cv's (different random seeds), first 3 simplex models ( original, compact original and reimplemented) on the original MNIST dataset
     for dec_s in decomposition_sizes:
         for cv in cv_list[:3]: #TODO remove debugging [0]
-            w, l_r2, o_r2, jac, dec = run_all_experiments(corpus_size=10, test_size=5, decomposition_size=dec_s, cv=cv, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True, no_ablation=True, plot_decomposition=False, datasets=datasets)  #TODO: with all datasets #TODO change back to 1000 100
+            w, l_r2, o_r2, jac, dec = run_all_experiments(corpus_size=10, test_size=5, decomposition_size=dec_s, cv=cv, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True, plot_decomposition=False, datasets=datasets, models=models)  #TODO: with all datasets #TODO change back to 1000 100
             for d in datasets:
                 for i, m in enumerate(models):
                     explainer_name = f"{m.name}_{d.name}"
@@ -392,10 +389,10 @@ def run_original_experiment():
                     explainer_names.add(explainer_name)
 
     metric_names = ["r2_latent", "r2_output"]
-    styles = []
-    colcors = [] #TODO
-    #line_styles = {f"{explainer_names[0]}": "-", f"{explainer_names[1]}": ":"}#, f"{explainer_names[2]}": ":"}
-
+    styles = ["-", "--", ":"]
+    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red"] #TODO
+    line_styles = {} #{f"{explainer_names[0]}": "-", f"{explainer_names[1]}": ":"}#, f"{explainer_names[2]}": ":"}
+    
     plt.rc("text", usetex=False)
     params = {"text.latex.preamble": r"\usepackage{amsmath}"}
     plt.rcParams.update(params)
@@ -425,7 +422,7 @@ def run_original_experiment():
 
     save_path = os.path.join(SAVE_PATH, "original_experiment")
     timestamp = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
-
+    plt.yticks(range)
     plt.figure(1)
     plt.xlabel(r"$decomposition size$")
     plt.ylabel(r"$R^2_{\mathcal{H}}$")
@@ -464,7 +461,7 @@ if __name__ == "__main__":
     elif args.original:
         run_original_experiment()
     elif args.all:
-        run_all_experiments(no_ablation=True)
+        run_all_experiments(list(Model_Type)[:3])
     else:
         run_original_experiment() #TODO remove
         parser.print_help()

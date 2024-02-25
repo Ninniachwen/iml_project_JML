@@ -3,15 +3,15 @@ import torch
 
 def r_2_scores(classifier, latent_rep_approx:torch.Tensor, latent_rep_true:torch.Tensor) -> list[float]:
     """
-    Calculates R2 scores between two latent representations. Same as in original Simplex.
+    Calculates R2 scores between the two latent representations and between the two outputs. Same as in original Simplex.
 
     Args:
         classifier (MNIST | CatsAndDogs | HeartFailure): One of the three trained classifiers
-        latent_rep_approx (torch.Tensor): the latent representation from this classifier
-        latent_rep_true (torch.Tensor): the true latent representation 
+        latent_rep_approx (torch.Tensor): the latent representation from the Simplex model (Simplex representation of the test-samples)
+        latent_rep_true (torch.Tensor): the true latent representation from original classifier (Original representation of the test-samples)
 
     Returns:
-        list[float]: R2 score
+        list[float]: 2 R2 scores
     """
     output_approx = classifier.latent_to_presoftmax(latent_rep_approx).detach()
     output_true = classifier.latent_to_presoftmax(latent_rep_true).detach()
