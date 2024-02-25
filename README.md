@@ -6,7 +6,7 @@
 
 For our project, we chose the paper '*Explaining Latent Representations with a Corpus of Examples*' by Jonathan Crabbe, Zhaozhi Qian, Fergus Imrie and Mihaela van der Schaar. 
 
-The approach introduces **SimplEx**, which aims to give insight into a blackbox model by providing example-based explanations. This is done by returning a set of weighted examples from a given corpus of exemplary inputs to highlight the influence of each example in the according decision. 
+The approach introduces **SimplEx**, which aims to give insight into a blackbox model by providing example-based explanations. This is done by returning a set of weighted examples from a given corpus of exemplary inputs. The weights can be interpreted as percentages that represent the similarities (and therefor the importance) of the according corpus example to a chosen test example.
 
 The code has been published on Github and is available under https://github.com/JonathanCrabbe/Simplex.
 
@@ -37,8 +37,7 @@ project-jml-project
 │   ├── datasets                        # directory for loading the different datasets
 │   │   ├── cats_and_dogs_dataset.py
 │   │   ├── heartfailure_dataset.py
-│   ├── evaluation.py                   # methods to evaluate the different ximplex models (e.g. r2scores)
-│   ├── heartfailure_prediction.py      # ? TODO Lukas
+│   ├── evaluation.py                   # methods to evaluate the different simplex models (e.g. r2scores)
 │   ├── heartfailure_training.py        # training of the blackbox classifier for the heartfailure dataset
 │   ├── main.py                         # main function
 │   ├── simplex_versions.py             # training of the different simplex version (original and reimplemented)
@@ -73,11 +72,17 @@ The reimplemented model can be found in file `src/simplex_versions.py` . The tra
 
 ## Evaluation on Original Dataset
 
+The paper did experiments on two datasets: MNIST (images) and Prostate Cancer (tabular data). We chose to evaluate our model and compare it using the MNIST dataset.
+
+For metrics, we chose the same as the paper: the r2 scores of the latent representation and of the output. 
+
+TODO weiter
+
 ## Evaluation on New Dataset
 
 TODO Lukas
 
-## Extensions to the Model 
+## Extensions of the Approach
 
 ## Ablation Study
 ### How to run
@@ -94,14 +99,18 @@ We created the following models and modified versions of them to test with diffe
 2. original compact model (*we rewrote the original code to a more compact form for ablation purposes*)
 3. reimplemented model
 4. model #3 without softmax layer
-5. model #3 with a standard normalization instead of the softmax layer
+5. model #3 with a normalization\* instead of the softmax layer
 6. model #3 with randomized initial weights (*instead of initialized with zero*)
 7. model #4 with randomized initial weights
 8. model #5 with randomized initial weights 
 9. model #2 without softmax layer
 10. model #2 without regularization
 
-We tested these models with the following parameters:
+\* in each epoch, we devide the weights of the corpus examples for each test example with the sum of the according weights so they add up to 1.
+
+For the models without softmax or normalization layer, we apply a normalization after completion of the training so the weights add up to 1 and can be interpreted as percentages.
+
+We tested these models with a combination of the following parameters, which leads to 560 combinations:
 * corpus_size = [50, 100]
 * test_size = [10, 50]
 * decomposition_size = [5, 10, 50, 100] (*we made sure that corpus_size < decomposition_size*)
@@ -122,8 +131,12 @@ While running the tests, we document:
 Especially the with last point, we can observe how good the given explanations are. The intuition: the most important corpus examples should be the same target as our test example we want to explain, otherwise the simplex model is probably not that great (or the examples really look alike).
 
 ### Results
-We can observe that the models without a softmax layer with weights initialized with zeros (models #4 and #9) seeimgly overfit during training. When using the whole corpus size for the explanation (corpus size = decomposition size), the r2 score is over 0.99. If the decomposition size is smaller, the score drops below zer0.
-When using our own reimplementation (model #3), the weight of the heighest contributing corpus example however is extremely small, mostly little over 1/(corpus size). This 
+First, we observe that the original model and the compact original model without any changes achieve the exactly same r2 scores and weights. This makes sense as the code is the same and the comparison is done as a sanity check.
+
+We can observe that the models without a softmax layer (models #4, #7  and #9) seeimgly overfit during training. When using the whole corpus size for the explanation (corpus size = decomposition size), the r2 scores are over 0.99. If the decomposition size is smaller, the score drops below zero.  
+When using our own reimplementations (model #4, #7), the weight of the heighest contributing corpus example however is extremely small, mostly little over 1/(corpus size). When using the compact original model, the weights are higher because of the used regularization. In all three cases, however, the most important corpus examples for explaining the test example have mostly the wrong label and the according ids are not identical to the ones from the original model. The model with the randomly initialized weights (#7) seems to be worse than the other two.  
+The bad performance of omiting the softmax layer makes sense as the distribution of the weights to add up to 1 after each epoch is missing.
+
 ...
 
 kurz zusammengefasst (später ausführlicher)
@@ -140,7 +153,7 @@ kurz zusammengefasst (später ausführlicher)
 
 ## Technical 
 
-The ablation study was done on a hp-Elitebook with a 11th Gen Intel® Core™ i7-1185G7 @ 3.00GHz × 8 CPU running Ubuntu 20. An experiment run with all 10 models types used for the ablation study took circa 30 seconds. The 560 combinations took about 40 minutes. There was no notable differente between training times of the different models.
+The ablation study was done on a hp-Elitebook with a 11th Gen Intel® Core™ i7-1185G7 @ 3.00GHz × 8 CPU running Ubuntu 20. An experiment run with all 10 models types used for the ablation study took circa 30 seconds. The overall 560 combinations took about 40 minutes. There was no notable differente between training times of the different models.
 
 
 TODO: future works: join test_set into corpus and see what happens
