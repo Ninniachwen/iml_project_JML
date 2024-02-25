@@ -49,7 +49,7 @@ class Dataset(enum.Enum):
     Heart = 3
     MNIST_MakeCorpus = 4
 
-def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, print_test_example=False, r_2_scores=True, decompose=True, random_dataloader=True) -> tuple[torch.Tensor, None|list[float], None|list[float], torch.Tensor, None|list[dict]]|None:
+def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, decomposition_size=100, corpus_size=100, test_size=10, test_id=0, print_jacobians=False, print_test_example=False, r_2_scores=True, decompose=True, random_dataloader=False) -> tuple[torch.Tensor, None|list[float], None|list[float], torch.Tensor, None|list[dict]]|None:
     """
     Decide which simplex model we want to train with which dataset.
 
@@ -347,10 +347,10 @@ def run_original_experiment():
     """
 
     models = [Model_Type.ORIGINAL, Model_Type.REIMPLEMENTED]
-    datasets = list(Dataset)[:1] #TODO all 4
+    datasets = list(Dataset)[:2] #TODO all 4
     decomposition_sizes = [3, 5]#, 10, 20, 50]
     cv_list = range(0,2)#TODO 10) # the results from the paper were obtained by taking all integer CV between 0 and 9
-    explainer_names = []
+    explainer_names = set()
     results_df = pd.DataFrame(
         columns=[
             "explainer",
@@ -383,13 +383,14 @@ def run_original_experiment():
                         ],
                         ignore_index=True,
                     )
-                    explainer_names.append(explainer_name)
+                    explainer_names.add(explainer_name)
 
     metric_names = ["r2_latent", "r2_output"]
-    line_styles = {f"{explainer_names[0]}": "-", f"{explainer_names[1]}": ":"}#, f"{explainer_names[2]}": ":"}
+    styles = []
+    colcors = [] #TODO
+    #line_styles = {f"{explainer_names[0]}": "-", f"{explainer_names[1]}": ":"}#, f"{explainer_names[2]}": ":"}
 
-    #matplotlib.rcParams['text.usetex'] = False
-    plt.rc("text", usetex=True)
+    plt.rc("text", usetex=False)
     params = {"text.latex.preamble": r"\usepackage{amsmath}"}
     plt.rcParams.update(params)
     
@@ -399,13 +400,14 @@ def run_original_experiment():
     mean_df = results_df.groupby(["explainer", "n_keep"]).aggregate("mean", numeric_only=True).unstack(level=0)
     std_df = results_df.groupby(["explainer", "n_keep"]).aggregate(np.std).unstack(level=0)
 
+    # my_xticks = decomposition_sizes TODO
     for m, metric_name in enumerate(metric_names):
         plt.figure(m + 1)
         for explainer_name in explainer_names:
             plt.plot(
                 decomposition_sizes,
                 mean_df[metric_name, explainer_name],
-                line_styles[explainer_name],
+                #line_styles[explainer_name],   #TODO
                 label=explainer_name,
             )
             plt.fill_between(
