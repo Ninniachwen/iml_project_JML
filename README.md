@@ -16,8 +16,8 @@ Their repository can be found in the folder `original_code`. While trying to kee
 ```
 project-jml-project
 ├── data                                # directory for the used datasets
-│   ├── Animal Images                   # directory for Cats and Dogs dataset, source:TODO
-│   ├── heart.csv                       # Heartfailure dataset, source:TODO
+│   ├── Animal Images                   # directory for Cats and Dogs dataset, source https://www.kaggle.com/datasets/unmoved/30k-cats-and-dogs-150x150-greyscale
+│   ├── heart.csv                       # Heartfailure dataset, source https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction/data
 │   └── MNIST                           # directory for MNIST dataset, source: "http://yann.lecun.com/exdb/mnist/"
 ├── files
 │   ├── ablation_results_original.csv       # results of ablation study
@@ -95,8 +95,6 @@ The cats and dogs classifier is a CNN with three convolutional and two linear la
 The other model is a 4-layer linear neural network. 
 Model training for one cats and dogs classifer over 40 epochs takes roughly 2 hours, pre-trained models are provided in files/models. They each achieve a test accuracy of roughly 87%.
 It is an interesting data set as the input images are 150x150 pixels and are harder to classify as the pictures vary more in the positioning of the object to classify and more noise and background is present.
-
-TODO: why is this dataset interesting for the project
 
 ## Extensions of the Approach
 

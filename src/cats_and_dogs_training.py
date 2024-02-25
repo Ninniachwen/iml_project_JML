@@ -52,10 +52,6 @@ def train_model(
     Returns:
         CatsandDogsClassifier: saved and trained CatsandDogsClassifier
     """
-    # seeded and cudnn set to disabled for reproducibility 
-    if random_seed:
-        torch.random.manual_seed(random_seed+cv)
-        torch.backends.cudnn.deterministic = True
     if (val_split > 0.5) or (val_split < 0.05): val_split=0.1
     #path to train and test directory 
     train_dir = CAD_TRAINDIR

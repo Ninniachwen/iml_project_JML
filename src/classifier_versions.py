@@ -85,7 +85,6 @@ def train_or_load_CaD_model(random_seed: int=42, cv: int =0, corpus_size: int=10
     Returns:
         tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]: classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents): Data is a tensor representation of one or more images. Target is an integer representing the images class. Latents are latent representation from the Cats and Dogs classifier.
     """
-    torch.manual_seed(seed=random_seed)
     # train the model if not found
     filename = f"classifier_cad_{cv}.pth"
     if not os.path.isfile(os.path.join(SAVE_PATH, filename)):
@@ -128,7 +127,6 @@ def train_or_load_heartfailure_model(random_seed: int=42, cv: int=0, corpus_size
     Returns:
         tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]: classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents): Data is a tensor representation of one or more input samples. Target is an integer representing the class. Latents are latent representation from the heartfailure classifier.
     """
-    torch.manual_seed(random_seed)
 
     datapath = HEART_FAILURE_DIR
 

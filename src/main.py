@@ -350,7 +350,7 @@ def run_original_experiment():
     """
 
     models = [Model_Type.ORIGINAL, Model_Type.REIMPLEMENTED]
-    datasets = list(Dataset) #TODO all 4
+    datasets = list(Dataset)[:4]
     decomposition_sizes = [3, 5, 10, 20, 50]
     cv_list = range(0,3)#TODO 10) # the results from the paper were obtained by taking all integer CV between 0 and 9
     explainer_names = set()
@@ -366,8 +366,8 @@ def run_original_experiment():
     
     # execute experiments for all decomposition sizes, cv's (different random seeds), first 3 simplex models ( original, compact original and reimplemented) on the original MNIST dataset
     for dec_s in decomposition_sizes:
-        for cv in cv_list[:3]: #TODO remove debugging [0]
-            w, l_r2, o_r2, jac, dec = run_all_experiments(corpus_size=100, test_size=10, decomposition_size=dec_s, cv=cv, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True, plot_decomposition=False, datasets=datasets, models=models)  #TODO: with all datasets #TODO change back to 1000 100
+        for cv in cv_list:
+            w, l_r2, o_r2, jac, dec = run_all_experiments(corpus_size=100, test_size=10, decomposition_size=dec_s, cv=cv, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True, plot_decomposition=False, datasets=datasets, models=models)
             i = 0
             for d in datasets:
                 for m in models:
@@ -394,7 +394,7 @@ def run_original_experiment():
     metric_names = ["r2_latent", "r2_output"]
     styles = ["-", "--", ":"]
     colors = ["tab:blue", "tab:orange", "tab:green", "tab:red"] #TODO
-    line_styles = {f"{explainer_names[0]}": "--", f"{explainer_names[1]}": ":", f"{explainer_names[2]}": "--", f"{explainer_names[3]}": ":"}#{explainer_names[4]}": "--", f"{explainer_names[5]}": ":"}
+    line_styles = {f"{explainer_names[0]}": "--", f"{explainer_names[1]}": ":", f"{explainer_names[2]}": "--", f"{explainer_names[3]}": ":", f"{explainer_names[4]}": "--", f"{explainer_names[5]}": ":", f"{explainer_names[6]}": "--", f"{explainer_names[7]}": ":"}
     
     plt.rc("text", usetex=False)
     params = {"text.latex.preamble": r"\usepackage{amsmath}"}
@@ -413,7 +413,7 @@ def run_original_experiment():
             plt.plot(
                 decomposition_sizes,
                 mean_df[metric_name, explainer_name],
-                line_styles[explainer_name],   #TODO
+                line_styles[explainer_name],
                 label=explainer_name,
             )
             plt.fill_between(
@@ -425,14 +425,14 @@ def run_original_experiment():
 
     save_path = os.path.join(SAVE_PATH, "original_experiment")
     timestamp = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
-    plt.yticks(range)
+    #plt.yticks(range(0,10,0.1))
     plt.figure(1)
-    plt.xlabel(r"$decomposition size$")
+    plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{H}}$")
     plt.legend()
     plt.savefig(os.path.join(save_path, f"r2_latent_{timestamp}.pdf"), bbox_inches="tight")
     plt.figure(2)
-    plt.xlabel(r"$decomposition size$")
+    plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{Y}}$")
     plt.legend()
     plt.savefig(os.path.join(save_path, f"r2_output{timestamp}.pdf"), bbox_inches="tight")
