@@ -64,21 +64,35 @@ Install all required packages:
 
 We reimplemented the model by introducing the class `Simplex_Model`, inheriting from torch.nn.Module. Our idea was to make the training of the Simplex model (which can be found in `original_code/src/simplexai/explainers/simplex.py`) more intuitive than the original, where the training was done without using predefined methods like "forward". 
 
-The original simplex method has a parameter `n_keep` which is used for the decomposition size (how many corpus examples should be used to explain the test example). Internally, it is used for regularization. In our reimplementation, we train the model independently of the decomposition size and later set the corpus examples' weights, which should not be in the decomposition to zero. 
+The original simplex method has a parameter `n_keep` which is used for the decomposition size (how many corpus examples should be used to explain the test example). Internally, it is used for regularization. In our reimplementation, we train the model independently of the decomposition size and later set the corpus examples' weights, which should not be in the decomposition, to zero. 
 
 The reimplemented model can be found in the file `src/simplex_versions.py`. The training is done in the function `reimplemented_model`.
 
+To execute some tests on all datasets, execute the following command in the root directory:
+
+`python3 src/main.py -ablation`.
+
+The results will be saced in `files/comparison_results.csv`.
+
 ### Compact Simplex
 
-We also condensed the original SimplEx model from the authors' github repo in a single function call, to make the ablation study easier. 
+We also condensed the original SimplEx model from the authors' github repo in a single function call, to make the ablation study easier. In our code, we called this model `compact original`. The results and learned weights of this model is identical to the original, which can also be seen in the ablation study. 
 
 ## Evaluation using Original Dataset
 
 The paper experimented on two datasets: MNIST (images) and Prostate Cancer (tabular data). We chose to evaluate and compare our model using the MNIST dataset.
 
-For metrics, we chose the same as the paper: the r2 scores of the latent representation and the output. 
+For metrics, we chose the same as the paper: the r2 scores of the latent representation (comparing the original latent representations of the blackbox classifier to the latent representation learned by the simplex model) and the output (comparing the output of the blackbox classifier using the original latent representations to the output of the blackbox model using the latent representation learned by the simplex model).
 
-TODO writer
+Results of the original model, the compact original and the reimplemented model with different parameters can be found in  `/files/mnist_results_original.csv`. To run the test, run the following command in the root directory:
+
+`python3 src/main.py -mnist`
+
+The results will be written to the file `/files/mnist_results.csv`.
+
+
+The reimplemented model achieved similar results to the original model, which are goor overall. TODO mehr
+
 
 
 ## Evaluation using New Dataset
@@ -109,9 +123,9 @@ To execute the tests for the ablation study, run the following command in the ro
 
 `python3 src/main.py -ablation`
 
-The results will be written to the file `/src/files/ablation_results.csv`
+The results will be written to the file `/files/ablation_results.csv`
 
-The original results of our ablation study can be seen in file `/src/files/ablation_results_original.csv`.
+The original results of our ablation study can be seen in file `/files/ablation_results_original.csv`.
 ### Experimental Setup
 We created the following models and modified versions of them to test with different parameters (see below):
 1. Original model 
