@@ -51,12 +51,12 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 show_colorbar=False,
                 use_pyplot=False
             )
-        title1 = f"{corpus_preds[sorted_weights_indices[index]]}%"
+        title1 = f"{corpus_preds[sorted_weights_indices[index]]}"
         title2 = f"Weight:{sorted_weights[index]*100:.2f}%"
         ax.set_title(title1, fontsize=30)
         ax.set_xlabel(title2, fontsize=30)
         
-    else:
+    else:# creates a gridspec for visualization of all corpus examples
         gs2 = gridspec.GridSpecFromSubplotSpec(grid_x_size, 2, subplot_spec=gs[1], hspace=0.15, wspace=0.15)
         index = 0
         for y,x in itertools.product(range(2),range(grid_x_size)):
@@ -76,7 +76,7 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 show_colorbar=False,
                 use_pyplot=False
             )
-            title1 = f"{corpus_preds[sorted_weights_indices[index]]}%"
+            title1 = f"{corpus_preds[sorted_weights_indices[index]]}"
             title2 = f"Weight:{sorted_weights[index]*100:.2f}%"
             ax.set_title(title1, fontsize=30)
             ax.set_xlabel(title2, fontsize=30)
