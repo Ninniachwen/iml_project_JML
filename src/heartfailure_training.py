@@ -51,9 +51,6 @@ def train_heartfailure_model(save_path: Path, x_train: np.ndarray, y_train: np.n
     """
     model = HeartFailureClassifier()
 
-    if random_seed:
-        torch.manual_seed(seed=random_seed + cv)
-
     optimizer = torch.optim.Adam(params=model.parameters(),lr=lr)
 
     train_data = HeartFailureDataset(x_train,y_train)
