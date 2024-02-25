@@ -356,10 +356,67 @@ def run_ablation():
                     for id in test_id:
                         if id > (d-1):
                             continue
-                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, filename="ablation_results.csv", models=Model_Type, datasets=Dataset.MNIST)
+                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, filename="ablation_results.csv", models=Model_Type, datasets=[Dataset.MNIST])
     
     print(f"End time: {strftime('%Y-%m-%d %H:%M:%S', gmtime())}") 
     print(f"The ablation study took {((time() - start_time) / 60):.0g} minutes.")
+
+def test_cats_and_dogs():
+    """Test the original and our reimplemented model on the Cats and Dogs dataset with a few parameters"""
+    corpus_size = [50, 100]
+    test_size = [10]
+    decomposition_size = [5, 10, 50, 100]
+    cv = [0,1]
+    test_id = [0]
+    for c in corpus_size:
+        for t in test_size:
+            for d in decomposition_size:
+                if d > c:
+                    continue
+                for v in cv:
+                    for id in test_id:
+                        if id > (d-1):
+                            continue
+                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, datasets=[Dataset.CaD], filename="cats_and_dogs_results.csv", plot_decomposition=False)
+
+
+def test_heartfailure():
+    """Test the original and our reimplemented model on the Heartfailure Dataset with a few parameters"""
+    corpus_size = [50, 100]
+    test_size = [10]
+    decomposition_size = [5, 10, 50, 100]
+    cv = [0,1]
+    test_id = [0]
+    for c in corpus_size:
+        for t in test_size:
+            for d in decomposition_size:
+                if d > c:
+                    continue
+                for v in cv:
+                    for id in test_id:
+                        if id > (d-1):
+                            continue
+                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, datasets=[Dataset.Heart], filename="heartfailure.csv", plot_decomposition=False)
+
+
+def test_mnist():
+    """Test the original and our reimplemented model on the MNIST Dataset with a few parameters"""
+    corpus_size = [50, 100]
+    test_size = [10]
+    decomposition_size = [5, 10, 50, 100]
+    cv = [0,1]
+    test_id = [0]
+    for c in corpus_size:
+        for t in test_size:
+            for d in decomposition_size:
+                if d > c:
+                    continue
+                for v in cv:
+                    for id in test_id:
+                        if id > (d-1):
+                            continue
+                        run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, datasets=[Dataset.MNIST], filename="mnist_results.csv", plot_decomposition=False)
+
 
 
 
@@ -484,12 +541,33 @@ if __name__ == "__main__":
         action="store_true",
         help="Run experiments over all 4 datasets (4. is mnist with corpus_maker) and all 3 non-ablation simplex models and save it in \"/files/comparison_results.csv\"",
     )
+    parser.add_argument(
+        "-cats_and_dogs",
+        action="store_true",
+        help="Run experiments on the Cats and Dogs dataset using all 3 non-ablation simplex models and save it in \"/files/cats_and_dogs_results.csv\"",
+    )
+    parser.add_argument(
+        "-heartfailure",
+        action="store_true",
+        help="Run experiments on the heartfailure dataset using all 3 non-ablation simplex models and save it in \"/files/heartfailure_results.csv\"",
+    )
+    parser.add_argument(
+        "-mnist",
+        action="store_true",
+        help="Run experiments on the mnist dataset using all 3 non-ablation simplex models and save it in \"/files/mnist_results.csv\"",
+    )
     args = parser.parse_args()
-    print(args)
+    
     if args.ablation:
         run_ablation()
     elif args.original:
         run_original_experiment()
+    elif args.cats_and_dogs:
+        test_cats_and_dogs()
+    elif args.heartfailure:
+        test_heartfailure()
+    elif args.mnist:
+        test_mnist()
     elif args.all:
         run_all_experiments(list(Model_Type)[:3])
     else:
