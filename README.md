@@ -174,6 +174,6 @@ The ablation study was done on a hp-Elitebook with an 11th Gen Intel® Core™ i
 
 The unittests were done on a Surface Pro 2018 with an 11th Gen Intel® Core™ i7-1165G7 @ 2.80GHz x 2, 32GB Ram running Windows 10. A complete unit test took 20 minutes, with all the classifiers beeing loaded from disk.
 
-Model training was performed with 11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz with 16GB Ram running Windows Home 11. As mentioned before trainign over 40 epochs took 2 hours for each model.
+Cats and dogs classsifer training was performed with 11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz with 16GB Ram running Windows Home 11. As mentioned before trainign over 40 epochs took 2 hours for each model.
 
 TODO: mention jacobian comparison score
