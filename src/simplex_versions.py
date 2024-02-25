@@ -161,7 +161,7 @@ def reimplemented_model(corpus_inputs:torch.Tensor, corpus_latents:torch.Tensor,
         input_baseline (torch.Tensor): baseline for jacobian projections
         softmax (bool, optional): True means the softmax layer should be used; used for ablation study. Defaults to True.
         mode (str, optional): "softmax", "normalize" or "nothing"; diffenrent modes for training the simplex model; used for ablation study. Defaults to "softmax".
-        weight_init_zero (bool, optional): True means we initialize the weights of the simple model with zeros (therwise random); used for ablation study. Defaults to True.
+        weight_init_zero (bool, optional): True means we initialize the weights of the simple model with zeros (otherwise random); used for ablation study. Defaults to True.
 
     Returns:
         tuple[torch.Tensor, torch.Tensor, torch.Tensor]:

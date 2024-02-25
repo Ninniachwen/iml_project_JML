@@ -1,7 +1,5 @@
-import inspect
 import math
 import numpy as np
-import os
 import sys
 import torch
 from torch.utils.data import DataLoader
@@ -14,7 +12,6 @@ from original_code.src.simplexai.experiments import mnist
 import src.classifier_versions as c
 import src.evaluation as e
 import src.main as m
-import src.simplex_versions as s
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
@@ -22,7 +19,7 @@ from src.datasets.heartfailure_dataset import HeartFailureDataset
 from src.heartfailure_training import load_data
 from src.utils.image_finder_cats_and_dogs import LABEL, get_images
 from src.utils.corpus_creator import make_corpus
-from src.utils.utlis import is_close_w_index, jacobian_compare_score, plot_jacobians_grayscale, plot_mnist, print_jacobians_with_img
+from src.utils.utlis import is_close_w_index, jacobian_compare_score
 
 class UnitTests(unittest.TestCase):
 
@@ -367,7 +364,7 @@ class TestWithDoSimplex(unittest.TestCase):
         self.random_seed = 42
         self.results = []
         for model, d in zip(models, decomp):
-            w, lr2, or2, j, d = m.do_simplex(
+            w, lr2, or2, j, d, _, _, _ = m.do_simplex(
                 model_type=model, 
                 decomposition_size=d, 
                 corpus_size = self.corpus_size,
@@ -490,21 +487,8 @@ class TestWithDoSimplex(unittest.TestCase):
         self.assertListEqual(self.orig_c_ids, self.compact_c_ids, f"corpus id's in decomposition differ btw original and compact model: {self.orig_c_ids}, {self.compact_c_ids}")
         print(3*">" + "QUALITY: comparing corpus id's in decomp between original and reimplemented simplex")
 
-    # TODO: maybe test class-distr of classification against class-distr of decomposition
-
 if __name__ == "__main__":
-    #unittest.main()
-    #test = UnitTests()
-    #test.setUpClass()
-    #test.test_shuffle_data_loader()
-    #test.test_make_corpus()
-    #test.test_do_simplex()
-
-    test = TestWithDoSimplex()
-    test.setUpClass()
-    test.test_decomposition_quality()
-    
-
+    unittest.main()
 
 # execute all tests via console from root dir using
 # python -m tests.unittests

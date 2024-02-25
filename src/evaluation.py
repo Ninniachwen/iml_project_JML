@@ -25,7 +25,7 @@ def r_2_scores(classifier, latent_rep_approx:torch.Tensor, latent_rep_true:torch
     return output_r2_score, latent_r2_score
 
 
-def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, corpus_data:torch.Tensor, corpus_targets:torch.Tensor, decompostion_size:int, weights:torch.Tensor, model_type:str, dataset:str) -> list[dict]:#TODO uplate description or remove model_type and dataset
+def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, corpus_data:torch.Tensor, corpus_targets:torch.Tensor, decompostion_size:int, weights:torch.Tensor, model_type:str, dataset:str) -> list[dict]:
     """
     collects decomposition for each test sample, using the top n corpus images. n = decomposition_size. eg: {'test_id': 0, 'img': tensor(...), 'target': 7, 'decomposition': [ {'c_id': 84, 'c_weight': 0.79606116, 'c_img': tensor(...), 'c_target': 7}, ... ]}
 
@@ -49,9 +49,9 @@ def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, cor
         top_x_ids:list[int] = sample_weights.argsort()[-decompostion_size:][::-1]
 
         if(len(corpus_data.shape) == 4):
-            size = [sample.shape[1], sample.shape[2]]
+            size = [sample.shape[1], sample.shape[2]] # image datasets have different shape
         else:
-            size = [sample.shape[0]]
+            size = [sample.shape[0]] # tabular data is 1-dimensional
 
         decompostion = []
         for w_id in top_x_ids:

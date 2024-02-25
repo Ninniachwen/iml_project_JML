@@ -24,7 +24,7 @@ def make_corpus(corpus_loader: DataLoader, corpus_size=100, n_classes=2, random_
     labels = []
     labelk = [0]*n_classes
 
-    for data, label in corpus_loader: # does reservoir sampling  #TODO creates UserWarning: resize transforms (use antialias=True)
+    for data, label in corpus_loader: # does reservoir sampling 
         for file, label in zip(data, label): # iterates over all files and labels
             labelk[label]+=1
             if(len(corpus_files)>=corpus_size):# if corpus is full replace random element with probability (corpus_size/num_classes)/labelk[label]

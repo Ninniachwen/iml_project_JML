@@ -19,6 +19,3 @@ def get_images(image_dir):
     picture_files = [picture_file for picture_file, _ in picture_files]
 
     return picture_files ,labels
-
-
-
