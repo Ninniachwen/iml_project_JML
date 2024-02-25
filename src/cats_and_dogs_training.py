@@ -68,7 +68,7 @@ def train_model(
     val_split = int(val_split*len(picture_files))
     #perform a validation split
     train_files, val_files = random_split(picture_files, [len(picture_files) - val_split, val_split])
-    #extraxt data and label fort rain and testset
+    #extraxt data and label for train and testset
     val_y = [label for _, label in val_files]
     val_x = [picture_file for picture_file, _ in val_files]
     train_y = [label for _, label in train_files]
