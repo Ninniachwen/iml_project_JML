@@ -12,7 +12,6 @@ import sys
 from time import time, strftime, gmtime
 import torch
 import random
-#TODO: check if requirements file is sufficient
 
 sys.path.insert(0, "")
 import src.evaluation as e
@@ -474,8 +473,6 @@ def run_original_experiment():
     # settings for plot
     explainer_names = list(explainer_names)
     metric_names = ["r2_latent", "r2_output"]
-    styles = ["-", "--", ":"]
-    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red"] #TODO
     line_styles = {f"{explainer_names[0]}": "--", f"{explainer_names[1]}": ":", f"{explainer_names[2]}": "--", f"{explainer_names[3]}": ":", f"{explainer_names[4]}": "--", f"{explainer_names[5]}": ":", f"{explainer_names[6]}": "--", f"{explainer_names[7]}": ":"}
     
     plt.rc("text", usetex=False)
@@ -488,8 +485,7 @@ def run_original_experiment():
     mean_df = results_df.groupby(["explainer", "n_keep"]).aggregate("mean", numeric_only=True).unstack(level=0)
     std_df = results_df.groupby(["explainer", "n_keep"]).aggregate(np.std).unstack(level=0)
 
-    # my_xticks = decomposition_sizes TODO
-    # one file per metric (here 2)
+    # one file per metric (here 2 metrics)
     for m, metric_name in enumerate(metric_names):
         plt.figure(m + 1)
         # add all results to the plot
@@ -520,7 +516,6 @@ def run_original_experiment():
     plt.ylabel(r"$R^2_{\mathcal{Y}}$")
     plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
     plt.savefig(os.path.join(save_path, f"r2_output{timestamp}.pdf"), bbox_inches="tight")
-    #TODO adjust decomposition size in plot axis or y axis range
 
     return
 
@@ -571,7 +566,6 @@ if __name__ == "__main__":
     elif args.all:
         run_all_experiments()
     else:
-        run_original_experiment() #TODO remove
         parser.print_help()
         parser.exit()
     print("Done")
