@@ -14,7 +14,7 @@ def r_2_scores(classifier, latent_rep_approx:torch.Tensor, latent_rep_true:torch
     return output_r2_score, latent_r2_score
 
 
-def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, corpus_data:torch.Tensor, corpus_targets:torch.Tensor, decompostion_size:int, weights:torch.Tensor) -> list[dict]:
+def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, corpus_data:torch.Tensor, corpus_targets:torch.Tensor, decompostion_size:int, weights:torch.Tensor, model_type:str, dataset:str) -> list[dict]:#TODO uplate description or remove model_type and dataset
     """
     
 
@@ -49,6 +49,8 @@ def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, cor
                 "c_target": corpus_targets[w_id].item()})
         
         per_sample = {"sample_id": s_id,
+                      "model_type": model_type,
+                      "dataset": dataset,
                       "img" : sample.reshape(size),
                       "target" : target.item(),
                       "decomposition" : decompostion

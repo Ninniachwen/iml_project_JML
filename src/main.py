@@ -2,12 +2,16 @@ import argparse
 import csv
 import enum
 import inspect
+import matplotlib.pyplot as plt
 import os
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import sys
 from time import strftime
 import torch
-import sys
 import time
-from pathlib import Path
 #TODO: check if requirements file is sufficient
 
 sys.path.insert(0, "")
@@ -150,7 +154,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     
     decompostions = None
     if decompose:
-        decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decomposition_size, weights)
+        decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decomposition_size, weights, model_type, dataset)
 
     if print_jacobians:
         # TODO: check if this works for other dataset
@@ -163,8 +167,10 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions
 
 
-def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, no_ablation=False) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:
-    """_summary_
+def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, no_ablation=False, do_decomp=True, dataset=None) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:#TODO update
+    """
+    runs all experiments over different sets of models and datasets, depending on settings.
+    no_ablation=True: first 3 simplex models, and all 4 datasets.  no_ablation=False: like ablation study, over all simplex models, including ablation versions, but only on mnist dataset.
 
     Args:
         corpus_size (int, optional): How many images to use for corpus (explainer images). Defaults to 100.
@@ -219,7 +225,10 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         ])
             
         models = list(Model_Type)[:3] if no_ablation else Model_Type
-        datasets = list(Dataset) if no_ablation else [list(Dataset)[0]]
+        if not dataset:
+            datasets = list(Dataset) if no_ablation else [list(Dataset)[0]]
+        else:
+            datasets = [dataset]
         for d in datasets:
             for m in models:
                 print(f"   model: {m}, dataset: {d}")
@@ -231,6 +240,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     test_size=test_size, 
                     decomposition_size=decomposition_size, 
                     test_id=test_id,
+                    #decompose=do_decomp,
                     random_dataloader=random_dataloader)
                 
                 weights_all.append(weights)
@@ -294,13 +304,89 @@ def run_ablation():
 
 def run_original_experiment():
     """
-    MNIST Approximation Quality Experiment as in paper and approximation_quality in original code (mnist.py)
+    MNIST Approximation Quality Experiment as in paper and approximation_quality in original code (mnist.py). Using all 4 simplex models on MNIST dataset. 
     """
-    decomposition_size = [3, 5, 10, 20, 50]
-    cv = range(0,10) # the results from the paper were obtained by taking all integer CV between 0 and 9
-    for d in decomposition_size:
-        for v in cv:    
-            run_all_experiments(corpus_size=1000, test_size=100, decomposition_size=d, cv=v, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True)
+    no_ablation = True
+    models = list(Model_Type)[:2] if no_ablation else Model_Type    # in orig: "explainer names"
+    dataset = list(Dataset)[0]
+    decomposition_sizes = [3, 5]#, 10, 20, 50]#TODO
+    cv_list = range(0,2)#TODO 10) # the results from the paper were obtained by taking all integer CV between 0 and 9
+    results_df = pd.DataFrame(
+        columns=[
+            "explainer",
+            "n_keep",
+            "cv",
+            "r2_latent",
+            "r2_output",
+        ]
+    )
+    
+    # execute experiments for all decomposition sizes, cv's (different random seeds), first 3 simplex models ( original, compact original and reimplemented) on the original MNIST dataset
+    for dec_s in decomposition_sizes:
+        for cv in cv_list[:3]: #TODO remove debugging [0]
+            w, l_r2, o_r2, jac, dec = run_all_experiments(corpus_size=1000, test_size=100, decomposition_size=dec_s, cv=cv, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True, no_ablation=no_ablation, do_decomp=False, dataset=dataset)  #TODO: with all datasets 
+            for i, m in enumerate(models):
+                results_df = pd.concat(
+                    [
+                        results_df,
+                        pd.DataFrame.from_dict(
+                            {
+                                "explainer": [m.name],
+                                "n_keep": [dec_s],
+                                "cv": [cv],
+                                "r2_latent": [l_r2[i]],
+                                "r2_output": [o_r2[i]],
+                            }
+                        ),
+                    ],
+                    ignore_index=True,
+                )
+
+    
+    metric_names = ["r2_latent", "r2_output"]
+    explainer_names = [model.name for model in models]
+    line_styles = {f"{explainer_names[0]}": "-", f"{explainer_names[1]}": "--"}#TODO , f"{explainer_names[2]}": ":"}
+
+    #plt.rc("text", usetex=True)
+    #params = {"text.latex.preamble": r"\usepackage{amsmath}"}
+    #plt.rcParams.update(params)
+    
+    sns.set(font_scale=1.5)
+    sns.set_style("white")
+    sns.set_palette("colorblind")
+    mean_df = results_df.groupby(["explainer", "n_keep"]).aggregate("mean", numeric_only=True).unstack(level=0)
+    std_df = results_df.groupby(["explainer", "n_keep"]).aggregate(np.std).unstack(level=0)
+
+    for m, metric_name in enumerate(metric_names):
+        plt.figure(m + 1)
+        for explainer_name in explainer_names:
+            plt.plot(
+                decomposition_sizes,
+                mean_df[metric_name, explainer_name],
+                line_styles[explainer_name],
+                label=explainer_name,
+            )
+            plt.fill_between(
+                decomposition_sizes,
+                mean_df[metric_name, explainer_name] - std_df[metric_name, explainer_name],
+                mean_df[metric_name, explainer_name] + std_df[metric_name, explainer_name],
+                alpha=0.2,
+            )
+
+    save_path = os.path.join(Path. os.getcwd,"..", "files", "original_experiment")
+    timestamp = strftime("%Y-%m-%d_%H-%M-%S", time.gmtime())
+
+    plt.figure(1)
+    plt.xlabel(r"$K$")
+    plt.ylabel(r"$R^2_{\mathcal{H}}$")
+    plt.legend()
+    plt.savefig(save_path / f"r2_latent_{timestamp}.pdf", bbox_inches="tight")
+    plt.figure(2)
+    plt.xlabel(r"$K$")
+    plt.ylabel(r"$R^2_{\mathcal{Y}}$")
+    plt.legend()
+    plt.savefig(save_path / f"r2_output{timestamp}.pdf", bbox_inches="tight")
+
     return
 
 if __name__ == "__main__":
@@ -329,6 +415,7 @@ if __name__ == "__main__":
     elif args.all:
         run_all_experiments(no_ablation=True)
     else:
+        run_original_experiment() #TODO remove
         parser.print_help()
         parser.exit()
     print("Done")

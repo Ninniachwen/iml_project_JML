@@ -115,6 +115,7 @@ dmypy.json
 
 # Pycharm
 .idea
+.vscode
 
 # Simplex
 original_code/experiments/data/*
