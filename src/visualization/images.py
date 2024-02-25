@@ -26,13 +26,13 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
     sorted_weights = weights[sorted_weights_indices]
     sorted_images = corpus[sorted_weights_indices]
     jacobian = jacobian[sorted_weights_indices]
-    fig = plt.figure(layout='constrained')
-    gs = gridspec.GridSpec(1,2, figure=fig, width_ratios=[0.2,0.8])
+    fig = plt.figure(layout='constrained', figsize=(20,20))
+    gs = gridspec.GridSpec(1,2, figure=fig, width_ratios=[0.25,0.75])
 
     ax = fig.add_subplot(gs[0])
-    ax.imshow(test_image.permute(1,2,0),cmap="grey")
+    ax.imshow(test_image.permute(1,2,0),cmap="gray")
     ax.axis('off')
-    ax.set_title(test_pred)
+    ax.set_title(test_pred, fontsize=40)
     grid_x_size = (decomposition_length-1)//2+1 
 
     if decomposition_length==1:
@@ -46,11 +46,12 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 method="blended_heat_map",
                 sign="all",
                 plt_fig_axis=(fig, ax),
-                title=title,
                 alpha_overlay=0.45,
                 show_colorbar=False,
                 use_pyplot=False
             )
+        ax.set_title(title, fontsize=40)
+        
     else:
         gs2 = gridspec.GridSpecFromSubplotSpec(grid_x_size, 2, subplot_spec=gs[1], hspace=0.2)
         index = 0
@@ -66,11 +67,11 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 method="blended_heat_map",
                 sign="all",
                 plt_fig_axis=(fig, ax),
-                title=title,
                 alpha_overlay=0.45,
                 show_colorbar=False,
                 use_pyplot=False
             )
+            ax.set_title(title, fontsize=40)
             index += 1
 
     return fig
