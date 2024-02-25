@@ -50,7 +50,7 @@ TODO Kontrolle ob alles so passt
 ## Set up the environment
 Create a conda environment:
 
-`conda create env jml_simplex`
+`conda create -n "jml_simplex" python=3.10`
 
 Activate the environment:
 
