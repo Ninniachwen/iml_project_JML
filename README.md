@@ -16,8 +16,8 @@ Their repository can be found in the folder `original_code`. While trying to kee
 ```
 project-jml-project
 ├── data                                # directory for the used datasets
-│   ├── Animal Images                   # directory for Cats and Dogs dataset, source:TODO
-│   ├── heart.csv                       # Heartfailure dataset, source:TODO
+│   ├── Animal Images                   # directory for Cats and Dogs dataset, source https://www.kaggle.com/datasets/unmoved/30k-cats-and-dogs-150x150-greyscale
+│   ├── heart.csv                       # Heartfailure dataset, source https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction/data
 │   └── MNIST                           # directory for MNIST dataset, source: "http://yann.lecun.com/exdb/mnist/"
 ├── files
 │   ├── ablation_results_original.csv       # results of ablation study
