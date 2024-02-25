@@ -134,3 +134,4 @@ original_code/data
 files/MNIST/*
 _temp/*
 tests/data*
+experiments/*

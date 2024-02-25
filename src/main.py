@@ -422,8 +422,9 @@ def test_mnist():
 def run_original_experiment():
     """
     MNIST Approximation Quality Experiment as in paper and approximation_quality in original code (mnist.py). Using all 4 simplex models on MNIST dataset. 
-    The results from the paper were obtained by taking all integer CV between 0 and 9. due to training time, we only run CV 0, 1, and 2.
-    Also, the paper uses corpus size 1000 and test size 100. However, this kills or machine, therefore we only used corpus size 100 and test size 10
+    The results from the paper were obtained by taking all integer CV between 0 and 9. Due to training time, we only run CV 0, 1, and 2.
+    Also, the paper uses corpus size 1000 and test size 100. However, this kills our machine, therefore we only used corpus size 100 and test size 10.
+    For the plots to work, a working installation of latex is needed.
     """
 
     models = [Model_Type.ORIGINAL, Model_Type.REIMPLEMENTED]

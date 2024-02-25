@@ -6,7 +6,7 @@
 
 For our reimplementation project, we chose the paper '*Explaining Latent Representations with a Corpus of Examples*' by Jonathan Crabbe, Zhaozhi Qian, Fergus Imrie, and Mihaela van der Schaar. 
 
-The approach introduces **SimplEx**, which aims to give insights into a blackbox model by providing example-based explanations. This is done by returning a set of weighted examples from a given corpus of exemplary inputs. The weights can be interpreted as percentages that represent the similarities (and therefore the importance) of the respective corpus example to a chosen test example.
+The approach introduces **SimplEx**, which aims to give insights into a blackbox model by providing example-based explanations. This is done by returning a set of weighted examples from a given corpus of exemplary inputs. The weights can be interpreted as percentages that represent the similarities (and therefore the importance) of the respective corpus example to a chosen test example. If the original sample is included in the corpus used to explain it, then this corpus sample receives, as expected, 99% importance in the decomposition.
 
 The code has been published on Github and is available at https://github.com/JonathanCrabbe/Simplex.
 
@@ -61,6 +61,7 @@ Install all required packages:
 `pip install -r requirements.txt`
 
 ## Reimplementation
+
 We reimplemented the model by introducing the class `Simplex_Model`, inheriting from torch.nn.Module. Our idea was to make the training of the Simplex model (which can be found in `original_code/src/simplexai/explainers/simplex.py`) more intuitive than the original, where the training was done without using predefined methods like "forward". 
 
 The original simplex method has a parameter `n_keep` which is used for the decomposition size (how many corpus examples should be used to explain the test example). Internally, it is used for regularization. In our reimplementation, we train the model independently of the decomposition size and later set the corpus examples' weights, which should not be in the decomposition to zero. 
@@ -68,9 +69,11 @@ The original simplex method has a parameter `n_keep` which is used for the decom
 The reimplemented model can be found in the file `src/simplex_versions.py`. The training is done in the function `reimplemented_model`.
 
 ### Compact Simplex
+
 We also condensed the original SimplEx model from the authors' github repo in a single function call, to make the ablation study easier. 
 
 ## Evaluation using Original Dataset
+
 The paper experimented on two datasets: MNIST (images) and Prostate Cancer (tabular data). We chose to evaluate and compare our model using the MNIST dataset.
 
 For metrics, we chose the same as the paper: the r2 scores of the latent representation and the output. 
@@ -79,6 +82,7 @@ TODO writer
 
 
 ## Evaluation using New Dataset
+
 We evaluate the simplex versions on two new datasets, for which we each train a new black box classifier: The cats and dogs dataset:
 
 `https://www.kaggle.com/datasets/unmoved/30k-cats-and-dogs-150x150-greyscale`
@@ -96,7 +100,7 @@ It is an interesting data set as the input images are 150x150 pixels and are har
 We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance. It performs reservoir sampling to sample uniformly random.
 Furthermore we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments. They can be found in files/images and some are visible on the poster. 
 They calculated weights of the corpus examples as well as the true prediction of the classifer, indicating the confidence of the classifer for the prediction are provided.  
-Additionally, 
+Additionally, we created a comparison score to compare Jacobian matrices with one another. For each jacobian, we TODO Meike
 
 
 ## Ablation Study
@@ -130,7 +134,7 @@ We tested these models with a combination of the following parameters, which lea
 * test_size = [10, 50]
 * decomposition_size = [5, 10, 50, 100] (*we made sure that corpus_size < decomposition_size*)
 * cv = [0,1]
-* test_id = [0,1]
+* test_id = [0,1] (*in resulting file renamed to sample_id*)
 
 
 We tested the models on the MNIST dataset.
@@ -161,11 +165,9 @@ kurz zusammengefasst (später ausführlicher)
 * reimplemented model mit randomisierten inistialen weights ist etwa genauso gut wie mit zu 0 gesetzen weights. 
 * original model ohne regularisierung: r2 immer gleich weil gewichte immer gleich sind.
 * reimplemented model bei decomposition size = corpus size genau gleich wie original. Bei decompsition size < corpus size sind die r2 werte etwas schlechter (~ 3 Prozentpunkte?, genauer checken) und die gewichte vom original höher -> vermutlich wegen der regularisierung. TODO: das gehört (auch) zum Punkt "vergleich reimplemented vs original"
-
 ## Testing
 
 ### Unit tests
-
 to execute unit tests, run `python -m tests.unittests` in the root directory
 
 ## Technical 
