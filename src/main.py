@@ -350,9 +350,9 @@ def run_original_experiment():
     """
 
     models = [Model_Type.ORIGINAL, Model_Type.REIMPLEMENTED]
-    datasets = list(Dataset)[:2] #TODO all 4
-    decomposition_sizes = [3, 5]#, 10, 20, 50]
-    cv_list = range(0,2)#TODO 10) # the results from the paper were obtained by taking all integer CV between 0 and 9
+    datasets = list(Dataset) #TODO all 4
+    decomposition_sizes = [3, 5, 10, 20, 50]
+    cv_list = range(0,3)#TODO 10) # the results from the paper were obtained by taking all integer CV between 0 and 9
     explainer_names = set()
     results_df = pd.DataFrame(
         columns=[
@@ -367,9 +367,10 @@ def run_original_experiment():
     # execute experiments for all decomposition sizes, cv's (different random seeds), first 3 simplex models ( original, compact original and reimplemented) on the original MNIST dataset
     for dec_s in decomposition_sizes:
         for cv in cv_list[:3]: #TODO remove debugging [0]
-            w, l_r2, o_r2, jac, dec = run_all_experiments(corpus_size=10, test_size=5, decomposition_size=dec_s, cv=cv, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True, plot_decomposition=False, datasets=datasets, models=models)  #TODO: with all datasets #TODO change back to 1000 100
+            w, l_r2, o_r2, jac, dec = run_all_experiments(corpus_size=100, test_size=10, decomposition_size=dec_s, cv=cv, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True, plot_decomposition=False, datasets=datasets, models=models)  #TODO: with all datasets #TODO change back to 1000 100
+            i = 0
             for d in datasets:
-                for i, m in enumerate(models):
+                for m in models:
                     explainer_name = f"{m.name}_{d.name}"
                     results_df = pd.concat(
                         [
@@ -387,11 +388,13 @@ def run_original_experiment():
                         ignore_index=True,
                     )
                     explainer_names.add(explainer_name)
+                    i += 1
 
+    explainer_names = list(explainer_names)
     metric_names = ["r2_latent", "r2_output"]
     styles = ["-", "--", ":"]
     colors = ["tab:blue", "tab:orange", "tab:green", "tab:red"] #TODO
-    line_styles = {} #{f"{explainer_names[0]}": "-", f"{explainer_names[1]}": ":"}#, f"{explainer_names[2]}": ":"}
+    line_styles = {f"{explainer_names[0]}": "--", f"{explainer_names[1]}": ":", f"{explainer_names[2]}": "--", f"{explainer_names[3]}": ":"}#{explainer_names[4]}": "--", f"{explainer_names[5]}": ":"}
     
     plt.rc("text", usetex=False)
     params = {"text.latex.preamble": r"\usepackage{amsmath}"}
@@ -410,7 +413,7 @@ def run_original_experiment():
             plt.plot(
                 decomposition_sizes,
                 mean_df[metric_name, explainer_name],
-                #line_styles[explainer_name],   #TODO
+                line_styles[explainer_name],   #TODO
                 label=explainer_name,
             )
             plt.fill_between(
