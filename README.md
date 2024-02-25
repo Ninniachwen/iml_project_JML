@@ -96,8 +96,6 @@ The other model is a 4-layer linear neural network.
 Model training for one cats and dogs classifer over 40 epochs takes roughly 2 hours, pre-trained models are provided in files/models. They each achieve a test accuracy of roughly 87%.
 It is an interesting data set as the input images are 150x150 pixels and are harder to classify as the pictures vary more in the positioning of the object to classify and more noise and background is present.
 
-TODO: why is this dataset interesting for the project
-
 ## Extensions of the Approach
 
 We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance. It performs reservoir sampling to sample uniformly random.
