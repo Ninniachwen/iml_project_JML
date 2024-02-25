@@ -26,20 +26,20 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
     sorted_weights = weights[sorted_weights_indices]
     sorted_images = corpus[sorted_weights_indices]
     jacobian = jacobian[sorted_weights_indices]
-    fig = plt.figure(layout='constrained', figsize=(20,20))
+    fig = plt.figure(layout='constrained', figsize=(10,10))
     gs = gridspec.GridSpec(1,2, figure=fig, width_ratios=[0.25,0.75])
 
-    ax = fig.add_subplot(gs[0])
+    ax = fig.add_subplot(gs[0], xmargin=0.2,ymargin=0.1)
     ax.imshow(test_image.permute(1,2,0),cmap="gray")
     ax.axis('off')
-    ax.set_title(test_pred, fontsize=40)
+    ax.set_title(test_pred, fontsize=30)
     grid_x_size = (decomposition_length-1)//2+1 
 
     if decomposition_length==1:
         image = sorted_images[0].numpy().transpose(1,2,0)
         saliency = jacobian[0].numpy().transpose(1,2,0)
-        title = f"{corpus_preds[sorted_weights_indices[0]]}, Weigth:Weight:{sorted_weights[0]*100:.2f}%"
-        ax = fig.add_subplot(gs[1])
+        
+        ax = fig.add_subplot(gs[1],xmargin=0.5, ymargin=0.2)
         visualize_image_attr(
                 saliency,
                 image,
@@ -51,17 +51,20 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 show_colorbar=False,
                 use_pyplot=False
             )
-        ax.set_title(title, fontsize=30)
+        title1 = f"{corpus_preds[sorted_weights_indices[index]]}%"
+        title2 = f"Weight:{sorted_weights[index]*100:.2f}%"
+        ax.set_title(title1, fontsize=30)
+        ax.set_xlabel(title2, fontsize=30)
         
     else:
-        gs2 = gridspec.GridSpecFromSubplotSpec(grid_x_size, 2, subplot_spec=gs[1], hspace=0.2)
+        gs2 = gridspec.GridSpecFromSubplotSpec(grid_x_size, 2, subplot_spec=gs[1], hspace=0.15, wspace=0.15)
         index = 0
         for y,x in itertools.product(range(2),range(grid_x_size)):
             if index >=decomposition_length: break
             image = sorted_images[index].numpy().transpose(1,2,0)
             saliency = jacobian[index].numpy().transpose(1,2,0)
-            title = f"{corpus_preds[sorted_weights_indices[index]]}, Weight:{sorted_weights[index]*100:.2f}%"
-            ax = fig.add_subplot(gs2[x,y])
+            
+            ax = fig.add_subplot(gs2[x,y],xmargin=0.2, ymargin=0.1)
             visualize_image_attr(
                 saliency,
                 image,
@@ -73,7 +76,10 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 show_colorbar=False,
                 use_pyplot=False
             )
-            ax.set_title(title, fontsize=30)
+            title1 = f"{corpus_preds[sorted_weights_indices[index]]}%"
+            title2 = f"Weight:{sorted_weights[index]*100:.2f}%"
+            ax.set_title(title1, fontsize=30)
+            ax.set_xlabel(title2, fontsize=30)
             index += 1
 
     return fig
