@@ -389,9 +389,9 @@ def run_original_experiment():
     explainer_names = [model.name for model in models]
     line_styles = {f"{explainer_names[0]}": "-", f"{explainer_names[1]}": "--"}#TODO , f"{explainer_names[2]}": ":"}
 
-    #plt.rc("text", usetex=True)
-    #params = {"text.latex.preamble": r"\usepackage{amsmath}"}
-    #plt.rcParams.update(params)
+    plt.rc("text", usetex=True)
+    params = {"text.latex.preamble": r"\usepackage{amsmath}"}
+    plt.rcParams.update(params)
     
     sns.set(font_scale=1.5)
     sns.set_style("white")
