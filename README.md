@@ -92,8 +92,10 @@ Model training for one cats and dogs classifer over 40 epochs takes roughly 2 ho
 
 ## Extensions of the Approach
 
-We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance.
-Furhtermore we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments. They can be found in files/images.
+We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance. It performs reservoir sampling to sample uniformly random.
+Furthermore we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments. They can be found in files/images and some are visible on the poster. 
+They provide weights of the corpus examples as well as the true prediction of the classifer, indicating the confidence of the classifer for the prediction.
+
 
 
 ## Ablation Study
