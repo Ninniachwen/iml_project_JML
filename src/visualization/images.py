@@ -30,7 +30,7 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
     gs = gridspec.GridSpec(1,2, figure=fig, width_ratios=[0.2,0.8])
 
     ax = fig.add_subplot(gs[0])
-    ax.imshow(test_image.permute(1,2,0),cmap="grey")
+    ax.imshow(test_image.permute(1,2,0),cmap="gray")
     ax.axis('off')
     ax.set_title(test_pred)
     grid_x_size = (decomposition_length-1)//2+1 

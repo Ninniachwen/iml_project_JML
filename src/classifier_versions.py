@@ -20,7 +20,7 @@ from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-SAVE_PATH=os.path.join(parentdir, "files", "models")
+SAVE_PATH=os.path.join(parentdir, "files", "classifier")
 
 
 def train_or_load_mnist(random_seed:int = 42, cv: int = 0, corpus_size:int=100, test_size:int=10, random_dataloader: bool=False, use_corpus_maker=False) -> tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
@@ -40,7 +40,8 @@ def train_or_load_mnist(random_seed:int = 42, cv: int = 0, corpus_size:int=100, 
         tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]: classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents): Data is a tensor representation of one or more images. Target is an integer representing the images class. Latents are latent representation from the mnist classifier.
     """
     # the following are standard values which are used in mnist.py to train mnistClassifier
-    if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")):
+    classifier_name = f"classifier_mnist_cv{cv}.pth"
+    if not os.path.isfile(os.path.join(SAVE_PATH,classifier_name)):
         mnist.train_model(
                 device="cpu",
                 random_seed=random_seed,
@@ -50,7 +51,7 @@ def train_or_load_mnist(random_seed:int = 42, cv: int = 0, corpus_size:int=100, 
             )
         
     classifier = MnistClassifier()
-    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,f"model_cv{cv}.pth")))
+    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,classifier_name)))
     classifier.eval()
 
     # data loader from approximate_quality of mnist.py of original code
@@ -86,10 +87,11 @@ def train_or_load_CaD_model(random_seed: int=42, cv: int =0, corpus_size: int=10
     """
     torch.manual_seed(seed=random_seed)
     # train the model if not found
-    if not os.path.isfile(os.path.join(SAVE_PATH,f"model_cad_{cv}.pth")):
+    filename = f"classifier_cad_{cv}.pth"
+    if not os.path.isfile(os.path.join(SAVE_PATH, filename)):
         train_model(save_path=SAVE_PATH, cv=cv, random_seed=random_seed)
 
-    classifier = load_model(os.path.join(SAVE_PATH,f"model_cad_{cv}.pth"))
+    classifier = load_model(os.path.join(SAVE_PATH, filename))
     classifier.eval()
     
     test_dir = CAD_TESTDIR
@@ -133,11 +135,12 @@ def train_or_load_heartfailure_model(random_seed: int=42, cv: int=0, corpus_size
     x,y = load_data(datapath)
     x_train, x_test, y_train, y_test = train_test_split(x, y,test_size=0.1, random_state=random_seed+cv, shuffle=random_dataloader)
     #trains model if not found
-    if not os.path.isfile(os.path.join(SAVE_PATH,f"model_heartfailure_{cv}.pth")):
+    filename = f"classifier_heartfailure_{cv}.pth"
+    if not os.path.isfile(os.path.join(SAVE_PATH, filename)):
         train_heartfailure_model(save_path=SAVE_PATH, x_train=x_train, y_train=y_train, x_test=x_test, y_test=y_test, cv=cv)
 
     classifier = HeartFailureClassifier()
-    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,f"model_heartfailure_{cv}.pth")))
+    classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,filename)))
     classifier.eval()
 
     train_data = HeartFailureDataset(x_train, y_train)

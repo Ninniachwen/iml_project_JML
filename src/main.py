@@ -22,6 +22,9 @@ from src.cats_and_dogs_training import get_classes_for_preds
 from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.utils.utlis import create_input_baseline, print_jacobians_with_img, plot_test_img_and_most_imp_explainer
 
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+SAVE_PATH=os.path.join(parentdir, "files")
 RANDOM_SEED=42
 
 class Model_Type(enum.Enum):
@@ -194,9 +197,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
     jacobians = []
     decompostions = []
 
-    currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    parentdir = os.path.dirname(currentdir)
-    file_path = os.path.join(parentdir, "files" , filename)
+    file_path = os.path.join(SAVE_PATH , filename)
     file = Path(file_path)
     
     mode = "a" if file.is_file() else "w"   # append if file exists, assuming either both files exist, or none
@@ -348,6 +349,7 @@ def run_original_experiment():
     """
     MNIST Approximation Quality Experiment as in paper and approximation_quality in original code (mnist.py). Using all 4 simplex models on MNIST dataset. 
     """
+    
     no_ablation = True
     models = list(Model_Type)[:2] if no_ablation else Model_Type    # in orig: "explainer names"
     dataset = list(Dataset)[0]
@@ -384,14 +386,13 @@ def run_original_experiment():
                     ignore_index=True,
                 )
 
-    
     metric_names = ["r2_latent", "r2_output"]
     explainer_names = [model.name for model in models]
     line_styles = {f"{explainer_names[0]}": "-", f"{explainer_names[1]}": "--"}#TODO , f"{explainer_names[2]}": ":"}
 
-    plt.rc("text", usetex=True)
-    params = {"text.latex.preamble": r"\usepackage{amsmath}"}
-    plt.rcParams.update(params)
+    #plt.rc("text", usetex=True)
+    #params = {"text.latex.preamble": r"\usepackage{amsmath}"}
+    #plt.rcParams.update(params)
     
     sns.set(font_scale=1.5)
     sns.set_style("white")
@@ -415,19 +416,19 @@ def run_original_experiment():
                 alpha=0.2,
             )
 
-    save_path = os.path.join(Path. os.getcwd,"..", "files", "original_experiment")
-    timestamp = strftime("%Y-%m-%d_%H-%M-%S", time.gmtime())
+    save_path = os.path.join(SAVE_PATH, "original_experiment")
+    timestamp = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
 
     plt.figure(1)
     plt.xlabel(r"$K$")
     plt.ylabel(r"$R^2_{\mathcal{H}}$")
     plt.legend()
-    plt.savefig(save_path / f"r2_latent_{timestamp}.pdf", bbox_inches="tight")
+    plt.savefig(os.path.join(save_path, f"r2_latent_{timestamp}.pdf", bbox_inches="tight"))
     plt.figure(2)
     plt.xlabel(r"$K$")
     plt.ylabel(r"$R^2_{\mathcal{Y}}$")
     plt.legend()
-    plt.savefig(save_path / f"r2_output{timestamp}.pdf", bbox_inches="tight")
+    plt.savefig(os.path.join(save_path, f"r2_output{timestamp}.pdf", bbox_inches="tight"))
 
     return
 
