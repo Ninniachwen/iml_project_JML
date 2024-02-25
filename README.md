@@ -78,9 +78,23 @@ TODO weiter
 
 ## Evaluation on New Dataset
 
-TODO Lukas
+We evaluate on two new datasets, for which we each train a new black box classifier : The cats and dogs dataset:
+
+`https://www.kaggle.com/datasets/unmoved/30k-cats-and-dogs-150x150-greyscale`
+
+and the heart failure predicitons dataset:
+
+`https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction/data`
+
+The cats and dogs classifer is a CNN with three convolutional and two linear layers, therefore having one more layer than the original papers MNIST Classifier. 
+The other model is a 4-layer linear neural network. 
+Model training for one cats and dogs classifer over 40 epochs takes roughly 2 hours, therefore pre-trained models are provided in files/models. They each achieve a test accuracy of roughly 87%.
 
 ## Extensions of the Approach
+
+We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance.
+Furhtermore we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments. They can be found in files/images.
+
 
 ## Ablation Study
 ### How to run
