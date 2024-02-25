@@ -1,6 +1,7 @@
 import argparse
 import pickle as pkl
 from pathlib import Path
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,13 +10,15 @@ import seaborn as sns
 import sklearn.metrics
 import torch
 
-from simplexai.models.image_recognition import MnistClassifier
+sys.path.insert(0, "")
+
+from original_code.src.simplexai.models.image_recognition import MnistClassifier
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "-cv_list",
     nargs="+",
-    default=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    default=[0], #, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     help="The list of experiment cv identifiers to plot",
     type=int,
 )
@@ -54,7 +57,7 @@ params = {"text.latex.preamble": r"\usepackage{amsmath}"}
 plt.rcParams.update(params)
 representer_metrics = np.zeros((2, len(cv_list)))
 current_path = Path.cwd()
-load_path = current_path / "experiments/results/mnist/quality"
+load_path = current_path / "original_code/src/simplexai/experiments/results/mnist/quality"
 for cv in cv_list:
     classifier = MnistClassifier()
     classifier.load_state_dict(torch.load(load_path / f"model_cv{cv}.pth"))

@@ -2,6 +2,7 @@ import argparse
 import math
 import os
 import pickle as pkl
+import sys
 import time
 from pathlib import Path
 
@@ -17,6 +18,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 from torch.utils.data import DataLoader, Dataset
+
+sys.path.insert(0, "")
 
 from original_code.src.simplexai.explainers.nearest_neighbours import NearNeighLatent
 from original_code.src.simplexai.explainers.representer import Representer
@@ -893,6 +896,6 @@ if __name__ == "__main__":
         default="approximation_quality",
         help="Experiment to perform",
     )
-    parser.add_argument("-cv", type=int, default=0, help="Cross validation parameter")
+    parser.add_argument("-cv", type=int, default=1, help="Cross validation parameter")
     args = parser.parse_args()
     main(args.experiment, args.cv)

@@ -5,11 +5,22 @@ import torch
 from typing import List
 from captum.attr._utils.visualization import visualize_image_attr
 
-def plot_corpus_decomposition(test_image: torch.Tensor, test_pred: str, corpus: torch.Tensor, corpus_preds: List[str], weights: torch.Tensor, decomposition_length: int=4, title: str = "") -> plt.Figure:
+def plot_corpus_decomposition(test_image: torch.Tensor, test_pred: str, corpus: torch.Tensor, corpus_preds: List[str], weights: torch.Tensor, decomposition_length: int=4) -> plt.Figure:
+    """Creates a figure with the most important corpus examples and respective weight
+
+    Args:
+        test_image (torch.Tensor): test iamge for the corpus decomposition
+        test_pred (str): prediction for the test image
+        corpus (torch.Tensor): corpus images
+        corpus_preds (List[str]): predictions for the corpus images
+        weights (torch.Tensor): weights for the corpus images
+        decomposition_length (int, optional): how many corpus images shall be printed. Defaults to 4.
+
+    Returns:
+        plt.Figure: figure with test images and most important corpus examples
     """
-    Plots test image and corpus decomposition. Gives maximally 6 corpus images
-    """
-    if decomposition_length < 1 or decomposition_length > 6 or not(type(decomposition_length)==int) or decomposition_length>len(weights): decomposition_length = 6
+    if decomposition_length < 1 or decomposition_length > 6 or not(type(decomposition_length)==int): decomposition_length = 6
+    if decomposition_length>len(weights): decomposition_length=len(weights)
     sorted_weights_indices = torch.argsort(weights, descending=True)
     sorted_weights = weights[sorted_weights_indices]
     sorted_images = corpus[sorted_weights_indices]
@@ -42,17 +53,27 @@ def plot_corpus_decomposition(test_image: torch.Tensor, test_pred: str, corpus: 
             ax.set_title(f"{corpus_preds[sorted_weights_indices[index]]}, Weigth:{sorted_weights[index].detach().item()*100:.2f}%")
             index += 1
     
+    return fig
 
-        return fig
 
+def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred: str, corpus: torch.Tensor, corpus_preds: List[str], weights: torch.Tensor, jacobian: torch.Tensor, decomposition_length: int=4) -> plt.Figure:
+    """Creates a figure with the most important corpus examples and jacobian projection
 
-def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred: str, corpus: torch.Tensor, corpus_preds: List[str], weights: torch.Tensor, jacobian: torch.Tensor, decomposition_length: int=2, title: str = "") -> plt.Figure:
+    Args:
+        test_image (torch.Tensor): test image the projection is plotted for
+        test_pred (str): string containing the prediction
+        corpus (torch.Tensor): tensor with corpus data
+        corpus_preds (List[str]): list with strings containing corpus predictions
+        weights (torch.Tensor): weights of the corpus data
+        jacobian (torch.Tensor): jacobian projection for the corpus data
+        decomposition_length (int, optional): how many corpus images shall be printed. Defaults to 2.
+
+    Returns:
+        plt.Figure: figure containing test image and top decomposition_length corpus images with jacoiban projection
     """
-    Plots test image and corpus decomposition. Gives maximally 6 corpus images and jacobian coloration
-    """
-    if decomposition_length < 1 or decomposition_length > 6 or not(type(decomposition_length)==int) or decomposition_length>len(weights): decomposition_length = 6
+    if decomposition_length < 1 or decomposition_length > 6 or not(type(decomposition_length)==int): decomposition_length = 6
+    if decomposition_length>len(weights): decomposition_length=len(weights)
     sorted_weights_indices = torch.argsort(weights, descending=True)
-    
     sorted_weights = weights[sorted_weights_indices]
     sorted_images = corpus[sorted_weights_indices]
     jacobian = jacobian[sorted_weights_indices]
@@ -77,8 +98,8 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 sign="all",
                 plt_fig_axis=(fig, ax),
                 title=title,
-                alpha_overlay=0.5,
-                show_colorbar=True,
+                alpha_overlay=0.45,
+                show_colorbar=False,
                 use_pyplot=False
             )
     else:
@@ -97,8 +118,8 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 sign="all",
                 plt_fig_axis=(fig, ax),
                 title=title,
-                alpha_overlay=0.5,
-                show_colorbar=True,
+                alpha_overlay=0.45,
+                show_colorbar=False,
                 use_pyplot=False
             )
             index += 1

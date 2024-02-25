@@ -9,15 +9,17 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import sys
-from time import strftime
+from time import time, strftime, gmtime
 import torch
-import time
 #TODO: check if requirements file is sufficient
 
 sys.path.insert(0, "")
 import src.evaluation as e
 import src.simplex_versions as s
 import src.classifier_versions as c
+from src.visualization.images import plot_corpus_decomposition_with_jacobian
+from src.cats_and_dogs_training import get_classes_for_preds
+from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.utils.utlis import create_input_baseline, print_jacobians_with_img, plot_test_img_and_most_imp_explainer
 
 RANDOM_SEED=42
@@ -156,15 +158,14 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     if decompose:
         decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decomposition_size, weights, model_type, dataset)
 
-    if print_jacobians:
-        # TODO: check if this works for other dataset
+    if print_jacobians and dataset != Dataset.Heart:
         print_jacobians_with_img(weights, test_id, corpus_data, jacobian)
-    if print_test_example:
-        # TODO: check if this works for other dataset
+
+    if print_test_example and dataset != Dataset.Heart:
         plot_test_img_and_most_imp_explainer(weights, corpus_data, test_data, test_id)
         
     
-    return weights, latent_r2_score, output_r2_score, jacobian, decompostions
+    return weights, latent_r2_score, output_r2_score, jacobian, decompostions, test_data, corpus_data, classifier
 
 
 def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, no_ablation=False, do_decomp=True, dataset=None) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:#TODO update
@@ -222,6 +223,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         "corpus_ids",
                         "corpus_weight",
                         "corpus_targets",
+                        "visualization"
                         ])
             
         models = list(Model_Type)[:3] if no_ablation else Model_Type
@@ -232,7 +234,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
         for d in datasets:
             for m in models:
                 print(f"   model: {m}, dataset: {d}")
-                weights, latent_r2_score, output_r2_score, jacobian, decompostion = do_simplex(
+                weights, latent_r2_score, output_r2_score, jacobian, decompostion, test_data, corpus_data, classifier = do_simplex(
                     model_type=m, 
                     dataset=d, 
                     cv=cv,
@@ -253,7 +255,46 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                 corpus_ids = [dec_c[i]["c_id"] for i in range(decomposition_size)]
                 corpus_weights = [dec_c[i]["c_weight"] for i in range(decomposition_size)]
                 corpus_targest = [dec_c[i]["c_target"] for i in range(decomposition_size)]
-                time_stamp = strftime("%Y-%m-%d-%H:%M:%S", time.gmtime())
+                time_stamp = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
+                if d == Dataset.CaD:
+                    test_pred = classifier(test_data)
+                    test_pred = f"Cat: {1-test_pred[test_id].item():.4f}%" if test_pred[test_id].item()<0.5 else f"Dog: {test_pred[test_id].item():.4f}%"
+                    corpus_pred = []
+                    corpus_preds = classifier(corpus_data)
+                    for pred in corpus_preds:
+                        if pred <0.5:
+                            corpus_pred.append(f"Cat: {1-pred.item():.4f}%")
+                        else:
+                            corpus_pred.append(f"Dog: {pred.item():.4f}%")
+                    figure = plot_corpus_decomposition_with_jacobian(test_image=test_data[test_id],
+                                                                     test_pred=test_pred,
+                                                                     corpus=corpus_data,
+                                                                     corpus_preds=corpus_pred,
+                                                                     weights=weights[test_id],
+                                                                     jacobian=jacobian,
+                                                                     decomposition_length=decomposition_size)
+                    image_save_path = os.path.join("files","images",f"{d}_{cv}_{test_id}_{m}.png")
+                    figure.savefig(image_save_path)
+                elif d in [Dataset.MNIST,Dataset.MNIST_MakeCorpus]:
+                    test_pred = classifier.probabilities(test_data)
+                    pred = torch.argmax(test_pred, dim=1)
+                    test_pred = f"{pred[test_id]}: {test_pred[test_id][pred[test_id]]:.4f}"
+                    corpus_pred = []
+                    corpus_preds = classifier.probabilities(corpus_data)
+                    for c_pred in corpus_preds:
+                        max_arg = torch.argmax(c_pred, dim=0)
+                        corpus_pred.append(f"{max_arg}: {c_pred[max_arg]:.4f}")
+                    figure = plot_corpus_decomposition_with_jacobian(test_image=test_data[test_id],
+                                                                     test_pred=test_pred,
+                                                                     corpus=corpus_data,
+                                                                     corpus_preds=corpus_pred,
+                                                                     weights=weights[test_id],
+                                                                     jacobian=jacobian,
+                                                                     decomposition_length=decomposition_size)
+                    image_save_path = os.path.join("files","images",f"{d}_{cv}_{test_id}_{m}.png")
+                    figure.savefig(image_save_path)
+                else:
+                    image_save_path= "No visualization"
                 writer.writerow([
                     time_stamp, 
                     corpus_size, 
@@ -272,6 +313,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     corpus_ids,
                     corpus_weights,
                     corpus_targest,
+                    image_save_path
                     ])
 
     return weights_all, latent_r2_scores, output_r2_scores, jacobians, decompostions
@@ -280,8 +322,8 @@ def run_ablation():
     """Run the different models for different combinations of corpus size, test size, decomposition size, seeding (cv) and test_id"""
     # testing 560 combinations
     print("Run ablation study.")
-    print(f"Start time: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}")  # see https://stackoverflow.com/questions/415511/how-do-i-get-the-current-time-in-python
-    start_time = time.time()
+    print(f"Start time: {strftime('%Y-%m-%d %H:%M:%S', gmtime())}")  # see https://stackoverflow.com/questions/415511/how-do-i-get-the-current-time-in-python
+    start_time = time()
     corpus_size = [50, 100]
     test_size = [10, 50]
     decomposition_size = [5, 10, 50, 100]
@@ -295,11 +337,11 @@ def run_ablation():
                 for v in cv:
                     for id in test_id:
                         if id > (d-1):
-                            pass
+                            continue
                         run_all_experiments(corpus_size=c, test_size=t, decomposition_size=d, cv=v, test_id=id, filename="ablation_results.csv")
     
-    print(f"End time: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime())}") 
-    print(f"The ablation study took {((time.time() - start_time) / 60):.0g} minutes.")
+    print(f"End time: {strftime('%Y-%m-%d %H:%M:%S', gmtime())}") 
+    print(f"The ablation study took {((time() - start_time) / 60):.0g} minutes.")
 
 
 def run_original_experiment():
