@@ -260,14 +260,14 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                 if plot_decomposition:
                     if d == Dataset.CaD:
                         test_pred = classifier(test_data)
-                        test_pred = f"Cat: {1-test_pred[test_id].item():.4f}%" if test_pred[test_id].item()<0.5 else f"Dog: {test_pred[test_id].item():.4f}%"
+                        test_pred = f"Cat: {(1-test_pred[test_id].item())*100:.2f}%" if test_pred[test_id].item()<0.5 else f"Dog: {(test_pred[test_id].item())*100:.2f}%"
                         corpus_pred = []
                         corpus_preds = classifier(corpus_data)
                         for pred in corpus_preds:
                             if pred <0.5:
-                                corpus_pred.append(f"Cat: {1-pred.item():.4f}%")
+                                corpus_pred.append(f"Cat: {(1-pred.item()) * 100:.2f}%")
                             else:
-                                corpus_pred.append(f"Dog: {pred.item():.4f}%")
+                                corpus_pred.append(f"Dog: {(pred.item() * 100):.2f}%")
                         figure = plot_corpus_decomposition_with_jacobian(test_image=test_data[test_id],
                         test_pred=test_pred,
                         corpus=corpus_data,
@@ -280,12 +280,12 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     elif d in [Dataset.MNIST,Dataset.MNIST_MakeCorpus]:
                         test_pred = classifier.probabilities(test_data)
                         pred = torch.argmax(test_pred, dim=1)
-                        test_pred = f"{pred[test_id]}: {test_pred[test_id][pred[test_id]]:.4f}"
+                        test_pred = f"{pred[test_id]}: {(test_pred[test_id][pred[test_id]]) * 100:.2f}%"
                         corpus_pred = []
                         corpus_preds = classifier.probabilities(corpus_data)
                         for c_pred in corpus_preds:
                             max_arg = torch.argmax(c_pred, dim=0)
-                            corpus_pred.append(f"{max_arg}: {c_pred[max_arg]:.4f}")
+                            corpus_pred.append(f"{max_arg}: {(c_pred[max_arg] * 100):.2f}%")
                         figure = plot_corpus_decomposition_with_jacobian(test_image=test_data[test_id],
                         test_pred=test_pred,
                         corpus=corpus_data,
