@@ -96,5 +96,5 @@ def train_heartfailure_model(save_path: Path, x_train: np.ndarray, y_train: np.n
         test()
         train(e)        
     test() 
-    torch.save(model.state_dict(), os.path.join(save_path,"models", f"model_heartfailure_{cv}.pth"))
+    torch.save(model.state_dict(), os.path.join(save_path, f"classifier_heartfailure_{cv}.pth"))
 

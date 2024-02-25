@@ -173,6 +173,6 @@ def train_model(
         scheduler.step(val_losses[-1])
     test() 
     # save model 
-    torch.save(model.state_dict(), os.path.join(save_path,"models", f"model_cad_{cv}.pth"))
+    torch.save(model.state_dict(), os.path.join(save_path, f"classifier_cad_{cv}.pth"))
     return model
 
