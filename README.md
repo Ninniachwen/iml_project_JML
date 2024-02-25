@@ -60,8 +60,6 @@ Install all required packages:
 
 `pip install -r requirments.txt`
 
-Make sure that python3 is >= version 3.10 .
-
 ## Reimplementation
 
 We reimplemented the model by introducing the class `Simplex_Model`, inheriting from torch.nn.Module. Our idea was to make the training of the Simplex model (which can be found in `original_code/src/simplexai/explainers/simplex.py`) more intuitive than the original, where the training was done without using predefined methods like "forward". 
