@@ -4,13 +4,13 @@
 
 ## Introduction
 
-For our project, we chose the paper '*Explaining Latent Representations with a Corpus of Examples*' by Jonathan Crabbe, Zhaozhi Qian, Fergus Imrie and Mihaela van der Schaar. 
+For our reimplementation project, we chose the paper '*Explaining Latent Representations with a Corpus of Examples*' by Jonathan Crabbe, Zhaozhi Qian, Fergus Imrie, and Mihaela van der Schaar. 
 
-The approach introduces **SimplEx**, which aims to give insight into a blackbox model by providing example-based explanations. This is done by returning a set of weighted examples from a given corpus of exemplary inputs. The weights can be interpreted as percentages that represent the similarities (and therefor the importance) of the according corpus example to a chosen test example.
+The approach introduces **SimplEx**, which aims to give insights into a blackbox model by providing example-based explanations. This is done by returning a set of weighted examples from a given corpus of exemplary inputs. The weights can be interpreted as percentages that represent the similarities (and therefore the importance) of the respective corpus example to a chosen test example.
 
-The code has been published on Github and is available under https://github.com/JonathanCrabbe/Simplex.
+The code has been published on Github and is available at https://github.com/JonathanCrabbe/Simplex.
 
-Their repository can be found in the folder `original_code`. While trying to keep it in the original condition, we had to change some paths to be able to reference them correctly in our code.
+Their repository can be found in the folder `original_code`. While trying to keep it in its original condition, we had to change some paths to be able to reference them correctly in our code.
 
 ## Code Overview
 ```
@@ -21,8 +21,8 @@ project-jml-project
 │   └── MNIST                           # directory for MNIST dataset, source: "http://yann.lecun.com/exdb/mnist/"
 ├── files
 │   ├── ablation_results_original.csv       # results of ablation study
-│   ├── approximation_quality_results.csv   # results of recreating original tests on MNIST dataset(see mnist.py in original code)
-│   ├── comparison_results.csv              # results of comparison between original and reimplemented model using diverse datasets
+│   ├── approximation_quality_results.csv   # results of recreating the MNIST Approximation Quality Experiment(see mnist.py in original code)
+│   ├── comparison_results.csv              # results of comparison between original and reimplemented model using diverse datasets and settings
 │   ├── images                              # directory for created images
 │   ├── models                              # directory for trained and saved blackbox classifier models
 ├── original_code                       # directory of the repository of the original code
@@ -149,7 +149,7 @@ kurz zusammengefasst (später ausführlicher)
 ## Testing
 
 ### Unit tests
- to execute unit tests, run `python -m tests.unittests` in root directory
+to execute unit tests, run `python -m tests.unittests` in root directory
 
 ## Technical 
 
