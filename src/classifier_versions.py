@@ -1,22 +1,21 @@
 import inspect
 import os
+from sklearn.model_selection import train_test_split
 import sys
 import torch
 from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
-import sys
 
 sys.path.insert(0, "")
 from original_code.src.simplexai.models.image_recognition import MnistClassifier
 from original_code.src.simplexai.experiments import mnist
 from src.cats_and_dogs_training import train_model, load_model
-from src.utils.utlis import CAD_TESTDIR,CAD_TRAINDIR, HEART_FAILURE_DIR
-from src.datasets.cats_and_dogs_dataset import CandDDataSet
-from src.utils.image_finder_cats_and_dogs import get_images
-from src.utils.corpus_creator import make_corpus
-from src.heartfailure_training import train_heartfailure_model, load_data
-from src.datasets.heartfailure_dataset import HeartFailureDataset
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
+from src.heartfailure_training import train_heartfailure_model, load_data
+from src.datasets.cats_and_dogs_dataset import CandDDataSet
+from src.datasets.heartfailure_dataset import HeartFailureDataset
+from src.utils.corpus_creator import make_corpus
+from src.utils.image_finder_cats_and_dogs import get_images
+from src.utils.utlis import CAD_TESTDIR,CAD_TRAINDIR, HEART_FAILURE_DIR
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
@@ -39,17 +38,18 @@ def train_or_load_mnist(random_seed:int = 42, cv: int = 0, corpus_size:int=100, 
     Returns:
         tuple[MnistClassifier, tuple[torch.Tensor, torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor, torch.Tensor]]: classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents): Data is a tensor representation of one or more images. Target is an integer representing the images class. Latents are latent representation from the mnist classifier.
     """
-    # the following are standard values which are used in mnist.py to train mnistClassifier
+    # train and store classifier, if none exists
     classifier_name = f"classifier_mnist_cv{cv}.pth"
     if not os.path.isfile(os.path.join(SAVE_PATH,classifier_name)):
-        mnist.train_model(
+        mnist.train_model( # using standard values
                 device="cpu",
                 random_seed=random_seed,
                 cv=cv,
                 save_path=SAVE_PATH,
                 model_reg_factor=0.1,
             )
-        
+    
+    # load classifier
     classifier = MnistClassifier()
     classifier.load_state_dict(torch.load(os.path.join(SAVE_PATH,classifier_name)))
     classifier.eval()
@@ -60,12 +60,13 @@ def train_or_load_mnist(random_seed:int = 42, cv: int = 0, corpus_size:int=100, 
     if use_corpus_maker:
         corpus_data, corpus_target = make_corpus(corpus_loader, corpus_size=corpus_size, n_classes=10, random_seed=random_seed+cv)
         test_data, test_targets = make_corpus(test_loader, corpus_size=corpus_size, n_classes=10, random_seed=random_seed+cv)
-    else:
+    else: # use simplex dataloader
         batch_id_corpus, (corpus_data, corpus_target) = next(enumerate(corpus_loader))
         corpus_data = corpus_data.detach()
         batch_id_test, (test_data, test_targets) = next(enumerate(test_loader))
         test_data = test_data.detach()
-        
+    
+    # get latent representations from classifier
     test_latents = classifier.latent_representation(test_data).detach()
     corpus_latents = classifier.latent_representation(corpus_data).detach()
 

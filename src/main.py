@@ -509,16 +509,16 @@ def run_original_experiment():
 
     save_path = os.path.join(SAVE_PATH, "original_experiment")
     timestamp = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
-    #plt.yticks(range(0,10,0.1)) #TODO
-    plt.figure(1)
+    plt.figure(1, figsize=(12,10))
+    plt.ylim((0,1))
     plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{H}}$")
-    plt.legend()
+    plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
     plt.savefig(os.path.join(save_path, f"r2_latent_{timestamp}.pdf"), bbox_inches="tight")
-    plt.figure(2)
+    plt.figure(2, figsize=(12,10))
     plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{Y}}$")
-    plt.legend()
+    plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
     plt.savefig(os.path.join(save_path, f"r2_output{timestamp}.pdf"), bbox_inches="tight")
     #TODO adjust decomposition size in plot axis or y axis range
 
@@ -569,7 +569,7 @@ if __name__ == "__main__":
     elif args.mnist:
         test_mnist()
     elif args.all:
-        run_all_experiments(list(Model_Type)[:3])
+        run_all_experiments()
     else:
         run_original_experiment() #TODO remove
         parser.print_help()

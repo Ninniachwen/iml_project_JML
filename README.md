@@ -58,10 +58,9 @@ Activate the environment:
 
 Install all required packages:
 
-`pip install -r requirments.txt`
+`pip install -r requirements.txt`
 
 ## Reimplementation
-
 We reimplemented the model by introducing the class `Simplex_Model`, inheriting from torch.nn.Module. Our idea was to make the training of the Simplex model (which can be found in `original_code/src/simplexai/explainers/simplex.py`) more intuitive than the original, where the training was done without using predefined methods like "forward". 
 
 The original simplex method has a parameter `n_keep` which is used for the decomposition size (how many corpus examples should be used to explain the test example). Internally, it is used for regularization. In our reimplementation, we train the model independently of the decomposition size and later set the corpus examples' weights, which should not be in the decomposition to zero. 
@@ -69,11 +68,9 @@ The original simplex method has a parameter `n_keep` which is used for the decom
 The reimplemented model can be found in the file `src/simplex_versions.py`. The training is done in the function `reimplemented_model`.
 
 ### Compact Simplex
-
 We also condensed the original SimplEx model from the authors' github repo in a single function call, to make the ablation study easier. 
 
 ## Evaluation using Original Dataset
-
 The paper experimented on two datasets: MNIST (images) and Prostate Cancer (tabular data). We chose to evaluate and compare our model using the MNIST dataset.
 
 For metrics, we chose the same as the paper: the r2 scores of the latent representation and the output. 
@@ -82,7 +79,6 @@ TODO writer
 
 
 ## Evaluation using New Dataset
-
 We evaluate the simplex versions on two new datasets, for which we each train a new black box classifier: The cats and dogs dataset:
 
 `https://www.kaggle.com/datasets/unmoved/30k-cats-and-dogs-150x150-greyscale`
@@ -97,7 +93,6 @@ Model training for one cats and dogs classifer over 40 epochs takes roughly 2 ho
 It is an interesting data set as the input images are 150x150 pixels and are harder to classify as the pictures vary more in the positioning of the object to classify and more noise and background is present.
 
 ## Extensions of the Approach
-
 We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance. It performs reservoir sampling to sample uniformly random.
 Furthermore we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments. They can be found in files/images and some are visible on the poster. 
 They calculated weights of the corpus examples as well as the true prediction of the classifer, indicating the confidence of the classifer for the prediction are provided.
@@ -165,16 +160,19 @@ kurz zusammengefasst (später ausführlicher)
 * reimplemented model mit randomisierten inistialen weights ist etwa genauso gut wie mit zu 0 gesetzen weights. 
 * original model ohne regularisierung: r2 immer gleich weil gewichte immer gleich sind.
 * reimplemented model bei decomposition size = corpus size genau gleich wie original. Bei decompsition size < corpus size sind die r2 werte etwas schlechter (~ 3 Prozentpunkte?, genauer checken) und die gewichte vom original höher -> vermutlich wegen der regularisierung. TODO: das gehört (auch) zum Punkt "vergleich reimplemented vs original"
+
 ## Testing
 
 ### Unit tests
+
 to execute unit tests, run `python -m tests.unittests` in the root directory
 
 ## Technical 
 
 The ablation study was done on a hp-Elitebook with an 11th Gen Intel® Core™ i7-1185G7 @ 3.00GHz × 8 CPU running Ubuntu 20. An experiment run with all 10 model types used for the ablation study took circa 30 seconds. The overall 560 combinations took about 40 minutes. There was no notable difference between training times of the different models.
 
+The unittests were done on a Surface Pro 2018 with an 11th Gen Intel® Core™ i7-1165G7 @ 2.80GHz x 2, 32GB Ram running Windows 10. A complete unit test took minutes ? , with all the classifiers beeing loaded from disk.
+
 
 TODO: mention join test_set into corpus and see what happens -> lucas did that
 TODO: mention jacobian comparison score
-TODO: mention self explaining corpus
