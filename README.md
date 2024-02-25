@@ -134,7 +134,7 @@ We tested these models with a combination of the following parameters, which lea
 * test_size = [10, 50]
 * decomposition_size = [5, 10, 50, 100] (*we made sure that corpus_size < decomposition_size*)
 * cv = [0,1]
-* test_id = [0,1] (*in resulting file renamed to sample_id*)
+* test_id = [0,1]
 
 
 We tested the models on the MNIST dataset.

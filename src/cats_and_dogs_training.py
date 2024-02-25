@@ -25,7 +25,7 @@ def load_model(model_path: Path)-> CatsandDogsClassifier:
 
 def train_model(
         save_path: Path,
-        cv: int,
+        cv: int ,
         n_epoch: int = 40,
         batch_size_train: int = 128,
         batch_size_test: int = 128,
@@ -170,5 +170,4 @@ def train_model(
     test() 
     # save model 
     torch.save(model.state_dict(), os.path.join(save_path, f"classifier_cad_{cv}.pth"))
-    return model
 

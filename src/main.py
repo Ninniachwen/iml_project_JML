@@ -11,6 +11,7 @@ import seaborn as sns
 import sys
 from time import time, strftime, gmtime
 import torch
+import random
 #TODO: check if requirements file is sufficient
 
 sys.path.insert(0, "")
@@ -81,8 +82,10 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
 
     torch.random.manual_seed(RANDOM_SEED + cv)
     torch.backends.cudnn.deterministic = True 
+    random.seed(RANDOM_SEED + cv)
     # https://www.typeerror.org/docs/pytorch/generated/torch.nn.conv1d
 
+    # load respective dataset and classifier (train if necessary)
     # must return classifier, (corpus_data, corpus_target, corpus_latents), (test_data, test_targets, test_latents)
     if dataset is Dataset.MNIST:
         classifier, corpus, test_set = c.train_or_load_mnist(RANDOM_SEED, cv, corpus_size=corpus_size, test_size=test_size, random_dataloader=random_dataloader)
@@ -109,6 +112,7 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     
     input_baseline = create_input_baseline(corpus_data.shape)
 
+    # train respective simplex model
     # must return latent_rep_approx, weights, jacobian
     if model_type is Model_Type.ORIGINAL:
         print(f"Starting on cv {cv} with the original model!")
@@ -154,13 +158,14 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
         print(f"skipping '{model_type}'&'{dataset}' is no valid combination or no valid input for model_type")
         return None
     
+    # perform experiments
     latent_rep_true = test_latents
-    
     latent_r2_score = None
     output_r2_score = None
     if r_2_scores:
         output_r2_score, latent_r2_score = e.r_2_scores(classifier, latent_rep_approx, latent_rep_true)
     
+    # create decomposition
     decompostions = None
     if decompose:
         decompostions = e.create_decompositions(test_data, test_targets, corpus_data, corpus_target, decomposition_size, weights, model_type, dataset)
@@ -171,11 +176,10 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     if print_test_example and dataset != Dataset.Heart:
         plot_test_img_and_most_imp_explainer(weights, corpus_data, test_data, test_id)
         
-    
     return weights, latent_r2_score, output_r2_score, jacobian, decompostions, test_data, corpus_data, classifier
 
 
-def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, plot_decomposition=True, datasets=list(Dataset), models=list(Model_Type)[:3]) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:#TODO update
+def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=0, test_id=0, filename="comparison_results.csv", random_dataloader=False, plot_decomposition=True, datasets=list(Dataset), models=list(Model_Type)[:3]) -> tuple[list[torch.Tensor], list[list[float]], list[list[float]], list[torch.Tensor], list[list[dict]]]:
     """
     runs all experiments over different sets of models and datasets, depending on settings.
 
@@ -221,7 +225,7 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         "dataset",
                         "latent_r2_score",
                         "output_r2_score",
-                        "sample_id",
+                        "test_id",
                         "target",
                         "most_imp_corpus_id",
                         "most_imp_corpus_weight",
@@ -232,10 +236,11 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         "visualization"
                         ])
         
+        # train all given simplex models on all given datasets
         for d in datasets:
             for m in models:
                 print(f"   model: {m}, dataset: {d}")
-                weights, latent_r2_score, output_r2_score, jacobian, decompostion, test_data, corpus_data, classifier = do_simplex(
+                weights, latent_r2_score, output_r2_score, jacobian, decompostion, test_data, corpus_data, classifier = do_simplex( # train simplex model
                     model_type=m, 
                     dataset=d, 
                     cv=cv,
@@ -245,29 +250,31 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     test_id=test_id,
                     random_dataloader=random_dataloader)
                 
+                # store results
                 weights_all.append(weights)
                 latent_r2_scores.append(latent_r2_score)
                 output_r2_scores.append(output_r2_score)
                 jacobians.append(jacobian)
                 decompostions.append(decompostion)
 
-                dec_c = decompostion[test_id]["decomposition"]
-                corpus_ids = [dec_c[i]["c_id"] for i in range(decomposition_size)]
-                corpus_weights = [dec_c[i]["c_weight"] for i in range(decomposition_size)]
-                corpus_targest = [dec_c[i]["c_target"] for i in range(decomposition_size)]
                 time_stamp = strftime("%Y-%m-%d-%H:%M:%S", gmtime())
                 image_save_path = "No visualization"
+                
+                # if we want to print decompositions
                 if plot_decomposition:
                     if d == Dataset.CaD:
+                        #get cat or dog prediction with for the test image
                         test_pred = classifier(test_data)
                         test_pred = f"Cat: {(1-test_pred[test_id].item())*100:.2f}%" if test_pred[test_id].item()<0.5 else f"Dog: {(test_pred[test_id].item())*100:.2f}%"
                         corpus_pred = []
                         corpus_preds = classifier(corpus_data)
+                        # get predictions for the corpus images
                         for pred in corpus_preds:
                             if pred <0.5:
                                 corpus_pred.append(f"Cat: {(1-pred.item()) * 100:.2f}%")
                             else:
                                 corpus_pred.append(f"Dog: {(pred.item() * 100):.2f}%")
+                        #create a figure with jacobian saliency map
                         figure = plot_corpus_decomposition_with_jacobian(test_image=test_data[test_id],
                         test_pred=test_pred,
                         corpus=corpus_data,
@@ -278,14 +285,17 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         image_save_path = os.path.join("files","images",f"{d}_{cv}_{test_id}_{m}.png")
                         figure.savefig(image_save_path)
                     elif d in [Dataset.MNIST,Dataset.MNIST_MakeCorpus]:
+                        # get mnist predictions for the test image
                         test_pred = classifier.probabilities(test_data)
                         pred = torch.argmax(test_pred, dim=1)
                         test_pred = f"{pred[test_id]}: {(test_pred[test_id][pred[test_id]]) * 100:.2f}%"
                         corpus_pred = []
                         corpus_preds = classifier.probabilities(corpus_data)
+                        # get predictions for the corpus data
                         for c_pred in corpus_preds:
                             max_arg = torch.argmax(c_pred, dim=0)
                             corpus_pred.append(f"{max_arg}: {(c_pred[max_arg] * 100):.2f}%")
+                        #create a figure with jacobian saliency map
                         figure = plot_corpus_decomposition_with_jacobian(test_image=test_data[test_id],
                         test_pred=test_pred,
                         corpus=corpus_data,
@@ -295,6 +305,14 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                         decomposition_length=decomposition_size)
                         image_save_path = os.path.join("files","images",f"{d}_{cv}_{test_id}_{m}.png")
                         figure.savefig(image_save_path)
+
+                # rearrange ids, weights and targets, so we have all top d entries as a list
+                dec_c = decompostion[test_id]["decomposition"]
+                corpus_ids = [dec_c[i]["c_id"] for i in range(decomposition_size)]
+                corpus_weights = [dec_c[i]["c_weight"] for i in range(decomposition_size)]
+                corpus_targets = [dec_c[i]["c_target"] for i in range(decomposition_size)]
+                
+                # write results into new line of csv
                 writer.writerow([
                     time_stamp, 
                     corpus_size, 
@@ -305,14 +323,14 @@ def run_all_experiments(corpus_size=100, test_size=10, decomposition_size=3, cv=
                     d.name,
                     latent_r2_score,
                     output_r2_score,
-                    decompostion[test_id]["sample_id"],
+                    decompostion[test_id]["test_id"],
                     decompostion[test_id]["target"],
                     decompostion[test_id]["decomposition"][0]["c_id"],
                     decompostion[test_id]["decomposition"][0]["c_weight"],
                     decompostion[test_id]["decomposition"][0]["c_target"],
                     corpus_ids,
                     corpus_weights,
-                    corpus_targest,
+                    corpus_targets,
                     image_save_path
                     ])
 
@@ -344,15 +362,18 @@ def run_ablation():
     print(f"The ablation study took {((time() - start_time) / 60):.0g} minutes.")
 
 
+
 def run_original_experiment():
     """
     MNIST Approximation Quality Experiment as in paper and approximation_quality in original code (mnist.py). Using all 4 simplex models on MNIST dataset. 
+    The results from the paper were obtained by taking all integer CV between 0 and 9. due to training time, we only run CV 0, 1, and 2.
+    Also, the paper uses corpus size 1000 and test size 100. However, this kills or machine, therefore we only used corpus size 100 and test size 10
     """
 
     models = [Model_Type.ORIGINAL, Model_Type.REIMPLEMENTED]
     datasets = list(Dataset)[:4]
     decomposition_sizes = [3, 5, 10, 20, 50]
-    cv_list = range(0,3)#TODO 10) # the results from the paper were obtained by taking all integer CV between 0 and 9
+    cv_list = range(0,3)
     explainer_names = set()
     results_df = pd.DataFrame(
         columns=[
@@ -364,10 +385,13 @@ def run_original_experiment():
         ]
     )
     
-    # execute experiments for all decomposition sizes, cv's (different random seeds), first 3 simplex models ( original, compact original and reimplemented) on the original MNIST dataset
+    # execute experiments for all decomposition sizes, cv's (different random seeds), two simplex models ( original and reimplemented) on all datasets
     for dec_s in decomposition_sizes:
         for cv in cv_list:
+            # train and execute all modles and datasets
             w, l_r2, o_r2, jac, dec = run_all_experiments(corpus_size=100, test_size=10, decomposition_size=dec_s, cv=cv, test_id=0, filename="approximation_quality_results.csv", random_dataloader=True, plot_decomposition=False, datasets=datasets, models=models)
+            
+            # store results in data frame
             i = 0
             for d in datasets:
                 for m in models:
@@ -390,6 +414,7 @@ def run_original_experiment():
                     explainer_names.add(explainer_name)
                     i += 1
 
+    # settings for plot
     explainer_names = list(explainer_names)
     metric_names = ["r2_latent", "r2_output"]
     styles = ["-", "--", ":"]
@@ -407,8 +432,10 @@ def run_original_experiment():
     std_df = results_df.groupby(["explainer", "n_keep"]).aggregate(np.std).unstack(level=0)
 
     # my_xticks = decomposition_sizes TODO
+    # one file per metric (here 2)
     for m, metric_name in enumerate(metric_names):
         plt.figure(m + 1)
+        # add all results to the plot
         for explainer_name in explainer_names:
             plt.plot(
                 decomposition_sizes,
@@ -425,7 +452,7 @@ def run_original_experiment():
 
     save_path = os.path.join(SAVE_PATH, "original_experiment")
     timestamp = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
-    #plt.yticks(range(0,10,0.1))
+    #plt.yticks(range(0,10,0.1)) #TODO
     plt.figure(1)
     plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{H}}$")
@@ -436,7 +463,7 @@ def run_original_experiment():
     plt.ylabel(r"$R^2_{\mathcal{Y}}$")
     plt.legend()
     plt.savefig(os.path.join(save_path, f"r2_output{timestamp}.pdf"), bbox_inches="tight")
-    #TODO adjust decomposition size in plot axis
+    #TODO adjust decomposition size in plot axis or y axis range
 
     return
 
@@ -470,5 +497,3 @@ if __name__ == "__main__":
         parser.print_help()
         parser.exit()
     print("Done")
-
-    # TODO: clean up code, obviously

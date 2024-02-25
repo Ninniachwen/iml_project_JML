@@ -19,7 +19,7 @@ from src.classifier.CatsAndDogsClassifier import CatsandDogsClassifier
 from src.classifier.HeartfailureClassifier import HeartFailureClassifier
 from src.datasets.cats_and_dogs_dataset import CandDDataSet
 from src.datasets.heartfailure_dataset import HeartFailureDataset
-from src.heartfailure_prediction import load_data
+from src.heartfailure_training import load_data
 from src.utils.image_finder_cats_and_dogs import LABEL, get_images
 from src.utils.corpus_creator import make_corpus
 from src.utils.utlis import is_close_w_index, jacobian_compare_score, plot_jacobians_grayscale, plot_mnist, print_jacobians_with_img
@@ -426,10 +426,10 @@ class TestWithDoSimplex(unittest.TestCase):
         self.assertEqual(len(self.rempl_decomp), self.test_size, "decomposition of reimplemented model have incorrect shape! (not a decomposition for each test sample)")
 
         # decomposition types & structure
-        # {'sample_id': 0, 'img': tensor(), 'target': 7, 'decomposition': [
+        # {'test_id': 0, 'img': tensor(), 'target': 7, 'decomposition': [
         #    {'c_id': 84, 'c_weight': 0.79606116, 'c_img': tensor(), 'c_target': 7}, ...
         # ]}
-        self.assertEqual(type(self.rempl_decomp[0]["sample_id"]), int, "decomposition of reimplemented model have incorrect type! (sample_id no integer)")
+        self.assertEqual(type(self.rempl_decomp[0]["test_id"]), int, "decomposition of reimplemented model have incorrect type! (test_id no integer)")
         self.assertEqual(type(self.rempl_decomp[0]["img"]), torch.Tensor, "decomposition of reimplemented model have incorrect type! (sample img no tensor)")
         self.assertEqual(type(self.rempl_decomp[0]["target"]), int, "decomposition of reimplemented model have incorrect type! (target no integer)")
         self.assertEqual(type(self.rempl_decomp[0]["decomposition"][self.test_id]["c_id"]), np.int64, "decomposition of reimplemented model have incorrect type! (corpus id no int)")
@@ -471,8 +471,8 @@ class TestWithDoSimplex(unittest.TestCase):
 
         print(3*">" + "checking most important corpus id in decomposition")
         # most important sample: same for all models?
-        self.assertEqual(self.results[0]["dec"][self.test_id]["sample_id"], self.results[1]["dec"][self.test_id]["sample_id"], "got different samples!")
-        self.assertEqual(self.results[0]["dec"][self.test_id]["sample_id"], self.results[2]["dec"][self.test_id]["sample_id"], "got different samples!")
+        self.assertEqual(self.results[0]["dec"][self.test_id]["test_id"], self.results[1]["dec"][self.test_id]["test_id"], "got different samples!")
+        self.assertEqual(self.results[0]["dec"][self.test_id]["test_id"], self.results[2]["dec"][self.test_id]["test_id"], "got different samples!")
 
         print(3*">" + "QUALITY: testing for target of most important explainer in decomp")
         # most important explainer is same class as sample (tested only for first sample, not all 10)?

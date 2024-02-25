@@ -14,7 +14,7 @@ from src.datasets.heartfailure_dataset import HeartFailureDataset
 
 # pre processing steps from https://www.kaggle.com/code/yousefahmedsafyelidn/heart-failure-prediction-ann
 def load_data(path: Path)->Tuple[torch.Tensor,torch.Tensor]:
-    """loads and preprocesses trainign data
+    """loads and preprocesses training data
 
     Args:
         path (Path): path to hearts.csv

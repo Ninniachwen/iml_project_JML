@@ -1,4 +1,4 @@
-timestamp;corpus_size;test_size;decomposition_size;cv;model_type;dataset;latent_r2_score;output_r2_score;sample_id;target;most_imp_corpus_id;most_imp_corpus_weight;most_imp_corpus_target;corpus_ids;corpus_weight;corpus_targets
+timestamp;corpus_size;test_size;decomposition_size;cv;model_type;dataset;latent_r2_score;output_r2_score;test_id;target;most_imp_corpus_id;most_imp_corpus_weight;most_imp_corpus_target;corpus_ids;corpus_weight;corpus_targets
 2024-02-23-22:38:52;50;10;5;0;ORIGINAL;MNIST;0.8772561818861313;0.9263285902953718;0;7;15;0.42505506;7;[15, 28, 42, 38, 33];[0.42505506, 0.32744625, 0.14573999, 0.09872875, 0.0006170919];[7, 2, 7, 7, 9]
 2024-02-23-22:38:56;50;10;5;0;ORIGINAL_COMPACT;MNIST;0.8772561818861313;0.9263285902953718;0;7;15;0.42505506;7;[15, 28, 42, 38, 33];[0.42505506, 0.32744625, 0.14573999, 0.09872875, 0.0006170919];[7, 2, 7, 7, 9]
 2024-02-23-22:38:58;50;10;5;0;REIMPLEMENTED;MNIST;0.879549992671278;0.926445377220586;0;7;15;0.42542326;7;[15, 28, 42, 38, 33];[0.42542326, 0.32767317, 0.14339986, 0.098426394, 0.0007423451];[7, 2, 7, 7, 9]

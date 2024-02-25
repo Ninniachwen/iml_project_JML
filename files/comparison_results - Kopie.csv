@@ -1,4 +1,0 @@
-test_id;corpus_size;test_size;decomposition_size;cv;model_type;dataset;latent_r2_score;output_r2_score;sample_id;target;most_imp_corpus_id;most_imp_corpus_weight;most_imp_corpus_target;corpus_ids;corpus_weight;corpus_targets
-0;100;10;3;0;ORIGINAL;MNIST;0.8857310396316861;0.9612668758961259;0;7;84;0.85194004;7;[84, 52, 28];[0.85194004, 0.14795987, 5.0278744e-05];[7, 7, 2]
-1;100;10;3;0;ORIGINAL_COMPACT;MNIST;0.8847163219363494;0.9605110396577616;0;7;84;0.8520165;7;[84, 52, 28];[0.8520165, 0.14794183, 3.597917e-05];[7, 7, 2]
-2;100;10;3;0;REIMPLEMENTED;MNIST;0.9865120274028412;0.9998759044251907;0;7;84;0.011607374;7;[84, 28, 52];[0.011607374, 0.011507919, 0.011084898];[7, 2, 7]

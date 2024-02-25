@@ -27,7 +27,7 @@ def r_2_scores(classifier, latent_rep_approx:torch.Tensor, latent_rep_true:torch
 
 def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, corpus_data:torch.Tensor, corpus_targets:torch.Tensor, decompostion_size:int, weights:torch.Tensor, model_type:str, dataset:str) -> list[dict]:#TODO uplate description or remove model_type and dataset
     """
-    collects decomposition for each test sample, using the top n corpus images. n = decomposition_size. eg: {'sample_id': 0, 'img': tensor(...), 'target': 7, 'decomposition': [ {'c_id': 84, 'c_weight': 0.79606116, 'c_img': tensor(...), 'c_target': 7}, ... ]}
+    collects decomposition for each test sample, using the top n corpus images. n = decomposition_size. eg: {'test_id': 0, 'img': tensor(...), 'target': 7, 'decomposition': [ {'c_id': 84, 'c_weight': 0.79606116, 'c_img': tensor(...), 'c_target': 7}, ... ]}
 
     Args:
         test_data (torch.Tensor): Feature vector of Test examples (not used, but given as argument to keep function calls the same)
@@ -61,7 +61,7 @@ def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, cor
                 "c_img": corpus_data[w_id].reshape(size),
                 "c_target": corpus_targets[w_id].item()})
         
-        per_sample = {"sample_id": s_id,
+        per_sample = {"test_id": s_id,
                       "model_type": model_type,
                       "dataset": dataset,
                       "img" : sample.reshape(size),

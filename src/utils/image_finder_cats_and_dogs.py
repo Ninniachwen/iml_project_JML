@@ -1,6 +1,6 @@
 import os
+from src.datasets.cats_and_dogs_dataset import LABEL
 
-LABEL ={"cats" : 0, "dogs" : 1}
 
 def get_images(image_dir):
     """
