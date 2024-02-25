@@ -53,21 +53,27 @@ def do_simplex(model_type=Model_Type.ORIGINAL, dataset=Dataset.MNIST, cv=0, deco
     """
     Decide which simplex model we want to train with which dataset.
 
-    Parameters:
-        model_type (enum|int): the simplex model; see Model_Type Class above
-        dataset: which dataset to use; see Dataset Class above
-        decomposition_size; with how many corpus examples a test example should be explained
-        corpus_size: how many examples should be in the corpus.
-        test_size: how many test examples we want to explain.
-        test_id: what id of the test examples we want to explain.
-        print_jacobians: if we want to print the jacobians
-        print_test_example: if we want to print the test example and the according most important corpus example
-        r_2_scores: if we want to return the r2 scores
-        decompose: if we want to create a decomposition (see evaluation.py)
-        random_dataloader: if we want to load the data randomly
-    
+    Args:
+        model_type (_type_, optional): The type of simplex model; see Model_Type Class above. Defaults to Model_Type.ORIGINAL.
+        dataset (_type_, optional): which dataset to use; see Dataset Class above. Defaults to Dataset.MNIST.
+        cv (int, optional): _description_. Defaults to 0.
+        decomposition_size (int, optional): with how many corpus examples a test example should be explained. Defaults to 100.
+        corpus_size (int, optional): how many examples should be in the corpus. Defaults to 100.
+        test_size (int, optional): how many test examples we want to explain. Defaults to 10.
+        test_id (int, optional): what id of the test examples we want to explain. Defaults to 0.
+        print_jacobians (bool, optional): if we want to print the jacobians. Defaults to False.
+        print_test_example (bool, optional): if we want to print the test example and the according most important corpus example. Defaults to False.
+        r_2_scores (bool, optional): if we want to return the r2 scores. Defaults to True.
+        decompose (bool, optional): if we want to create a decomposition (see evaluation.py). Defaults to True.
+        random_dataloader (bool, optional): if we want to load the data randomly. Defaults to False.
+
+    Raises:
+        Exception 1: invalid dataset: if dataset is not part of Dataset Enum.
+        Exception 2: if corpus_size is smaller than decomposition_size.
+        Exception 3: if test_size is smaller or equal to test_id.
+
     Returns:
-        tuple[torch.Tensor, None or list[float], None or list[float], None or torch.Tensor, None or list[dict]] : weights, latent_r2_score, output_r2_score, jacobian, decompostions
+        tuple[torch.Tensor, None|list[float], None|list[float], torch.Tensor, None|list[dict]]|None: weights, latent_r2_score, output_r2_score, jacobian, decompostions
     """
 
     assert corpus_size >= decomposition_size, "decomposition size can't be larger than corpus"

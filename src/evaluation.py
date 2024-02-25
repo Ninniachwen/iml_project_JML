@@ -2,6 +2,17 @@ import sklearn
 import torch
 
 def r_2_scores(classifier, latent_rep_approx:torch.Tensor, latent_rep_true:torch.Tensor) -> list[float]:
+    """
+    Calculates R2 scores between two latent representations. Same as in original Simplex.
+
+    Args:
+        classifier (MNIST | CatsAndDogs | HeartFailure): One of the three trained classifiers
+        latent_rep_approx (torch.Tensor): the latent representation from this classifier
+        latent_rep_true (torch.Tensor): the true latent representation 
+
+    Returns:
+        list[float]: R2 score
+    """
     output_approx = classifier.latent_to_presoftmax(latent_rep_approx).detach()
     output_true = classifier.latent_to_presoftmax(latent_rep_true).detach()
     output_r2_score = sklearn.metrics.r2_score(
@@ -15,20 +26,21 @@ def r_2_scores(classifier, latent_rep_approx:torch.Tensor, latent_rep_true:torch
 
 
 def create_decompositions(test_data:torch.Tensor, test_targets:torch.Tensor, corpus_data:torch.Tensor, corpus_targets:torch.Tensor, decompostion_size:int, weights:torch.Tensor, model_type:str, dataset:str) -> list[dict]:#TODO uplate description or remove model_type and dataset
-    """_summary_
+    """
+    collects decomposition for each test sample, using the top n corpus images. n = decomposition_size. eg: {'sample_id': 0, 'img': tensor(...), 'target': 7, 'decomposition': [ {'c_id': 84, 'c_weight': 0.79606116, 'c_img': tensor(...), 'c_target': 7}, ... ]}
 
     Args:
-        test_data (torch.Tensor): _description_
-        test_targets (torch.Tensor): _description_
-        corpus_data (torch.Tensor): _description_
-        corpus_targets (torch.Tensor): _description_
-        decompostion_size (int): _description_
-        weights (torch.Tensor): _description_
-        model_type (str): _description_
-        dataset (str): _description_
+        test_data (torch.Tensor): Feature vector of Test examples (not used, but given as argument to keep function calls the same)
+        test_targets (torch.Tensor): Targets (labels) of Test examples
+        corpus_data (torch.Tensor): Feature vector of Corpus examples
+        corpus_targets (torch.Tensor): Targets (labels) of Corpus examples
+        decompostion_size (int): with how many corpus examples a test example should be explained
+        weights (torch.Tensor): weights of the corpus examples
+        model_type (str): The type of simplex model; see Enum Model_Type in main.py
+        dataset (str): which dataset to use; see Enum Dataset  in main.py
 
     Returns:
-        list[dict]: _description_
+        list[dict]: list of decompositions, which are structured in a nested dictionary each.
     """
 
     full_decomposition = []
