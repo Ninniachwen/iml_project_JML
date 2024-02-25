@@ -174,7 +174,7 @@ to execute unit tests, run `python -m tests.unittests` in the root directory
 
 The ablation study was done on a hp-Elitebook with an 11th Gen Intel® Core™ i7-1185G7 @ 3.00GHz × 8 CPU running Ubuntu 20. An experiment run with all 10 model types used for the ablation study took circa 30 seconds. The overall 560 combinations took about 40 minutes. There was no notable difference between training times of the different models.
 
+Model training was performed with 11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz with 16GB Ram running Windows Home 11. As mentioned before trainign over 40 epochs took 2 hours for each model.
 
-TODO: mention join test_set into corpus and see what happens -> lucas did that
 TODO: mention jacobian comparison score
 TODO: mention self explaining corpus
