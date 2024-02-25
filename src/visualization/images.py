@@ -20,7 +20,7 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
     Returns:
         plt.Figure: figure containing test image and top decomposition_length corpus images with jacoiban projection
     """
-    if decomposition_length < 1 or decomposition_length > 6 or not(type(decomposition_length)==int): decomposition_length = 6
+    if decomposition_length < 1 or decomposition_length > 4: decomposition_length = 4
     if decomposition_length>len(weights): decomposition_length=len(weights)
     sorted_weights_indices = torch.argsort(weights, descending=True)
     sorted_weights = weights[sorted_weights_indices]
@@ -46,11 +46,12 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 method="blended_heat_map",
                 sign="all",
                 plt_fig_axis=(fig, ax),
-                alpha_overlay=0.45,
+                outlier_perc=10,
+                alpha_overlay=0.5,
                 show_colorbar=False,
                 use_pyplot=False
             )
-        ax.set_title(title, fontsize=40)
+        ax.set_title(title, fontsize=30)
         
     else:
         gs2 = gridspec.GridSpecFromSubplotSpec(grid_x_size, 2, subplot_spec=gs[1], hspace=0.2)
@@ -67,11 +68,12 @@ def plot_corpus_decomposition_with_jacobian(test_image: torch.Tensor, test_pred:
                 method="blended_heat_map",
                 sign="all",
                 plt_fig_axis=(fig, ax),
-                alpha_overlay=0.45,
+                outlier_perc=10,
+                alpha_overlay=0.5,
                 show_colorbar=False,
                 use_pyplot=False
             )
-            ax.set_title(title, fontsize=40)
+            ax.set_title(title, fontsize=30)
             index += 1
 
     return fig
