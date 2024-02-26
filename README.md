@@ -111,10 +111,12 @@ Model training for one cats and dogs classifer over 40 epochs takes roughly 2 ho
 It is an interesting data set as the input images are 150x150 pixels and are harder to classify as the pictures vary more in the positioning of the object to classify and more noise and background is present.
 
 ## Extensions of the Approach
-We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance. It performs reservoir sampling to sample uniformly random.
-Furthermore we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments. They can be found in files/images and some are visible on the poster. 
-They calculated weights of the corpus examples as well as the true prediction of the classifer, indicating the confidence of the classifer for the prediction are provided.  
-Additionally, we created a comparison score to compare Jacobian matrices with one another. For each jacobian, we TODO Meike
+We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance. It performs reservoir sampling to sample uniformly random.  
+
+Furthermore we provide a visual decomposition for the mnist and cats and dogs classifiers from the experiments, that can automatically be generated. They can be found in files/images and some are visible on the poster.
+They calculated weights of the corpus examples as well as the true prediction of the classifer, indicating the confidence of the classifer for the prediction are provided.   
+
+Additionally, we created a comparison score to compare Jacobian matrices with one another. For each jacobian, we located the most important pixel location per row. Then we calculated the avarage difference between this max-index-list for the two jacobians (because if the max pixel is not identical, but at least still close together, this is better than if they were far apart). This avarage index difference describes a rough similarity between two jacobian representations. We used it in the Tests, to check if original and compact original simplex had identical jacobians, and if our reimplemented jacobians were at least similar. Which they were.
 
 
 ## Ablation Study
@@ -191,5 +193,3 @@ The ablation study was done on a hp-Elitebook with an 11th Gen Intel® Core™ i
 The unittests were done on a Surface Pro 2018 with an 11th Gen Intel® Core™ i7-1165G7 @ 2.80GHz x 2, 32GB Ram running Windows 10. A complete unit test took 20 minutes, with all the classifiers beeing loaded from disk.
 
 Cats and dogs classsifer training was performed with 11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz with 16GB Ram running Windows Home 11. As mentioned before trainign over 40 epochs took 2 hours for each model.
-
-TODO: mention jacobian comparison score

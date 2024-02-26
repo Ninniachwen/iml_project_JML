@@ -428,7 +428,7 @@ def run_original_experiment():
     """
 
     models = [Model_Type.ORIGINAL, Model_Type.REIMPLEMENTED]
-    datasets = list(Dataset)[:4]
+    datasets = list(Dataset)
     decomposition_sizes = [3, 5, 10, 20, 50]
     cv_list = range(0,3)
     explainer_names = set()
@@ -480,7 +480,7 @@ def run_original_experiment():
     params = {"text.latex.preamble": r"\usepackage{amsmath}"}
     plt.rcParams.update(params)
     
-    sns.set(font_scale=1.5)
+    sns.set(font_scale=2.0)
     sns.set_style("white")
     sns.set_palette("colorblind")
     mean_df = results_df.groupby(["explainer", "n_keep"]).aggregate("mean", numeric_only=True).unstack(level=0)
@@ -488,7 +488,7 @@ def run_original_experiment():
 
     # one file per metric (here 2 metrics)
     for m, metric_name in enumerate(metric_names):
-        plt.figure(m + 1)
+        plt.figure(m + 1, figsize=(12,10))
         # add all results to the plot
         for explainer_name in explainer_names:
             plt.plot(
@@ -506,13 +506,13 @@ def run_original_experiment():
 
     save_path = os.path.join(SAVE_PATH, "original_experiment")
     timestamp = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
-    plt.figure(1, figsize=(12,10))
+    plt.figure(1)
     plt.ylim((0,1))
     plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{H}}$")
     plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
     plt.savefig(os.path.join(save_path, f"r2_latent_{timestamp}.pdf"), bbox_inches="tight")
-    plt.figure(2, figsize=(12,10))
+    plt.figure(2)
     plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{Y}}$")
     plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
