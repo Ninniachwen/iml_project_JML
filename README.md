@@ -51,7 +51,6 @@ project-jml-project
 │   └── visualization                   # directory for plotting functions
 └── tests                               # directory for unittests
 ```
-TODO Kontrolle ob alles so passt
 
 ## Set up the environment
 Create a conda environment:
@@ -65,6 +64,8 @@ Activate the environment:
 Install all required packages:
 
 `pip install -r requirements.txt`
+
+For printing the plots for the original experiments (`python3 src/main.py -original`), the paket `latex` is needed.
 
 ## Reimplementation
 
