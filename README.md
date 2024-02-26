@@ -20,12 +20,18 @@ project-jml-project
 │   ├── heart.csv                       # Heartfailure dataset, source https://www.kaggle.com/datasets/fedesoriano/heart-failure-prediction/data
 │   └── MNIST                           # directory for MNIST dataset, source: "http://yann.lecun.com/exdb/mnist/"
 ├── files
-│   ├── ablation_results_original.csv       # results of ablation study
-│   ├── approximation_quality_results.csv   # results of recreating the MNIST Approximation Quality Experiment(see mnist.py in original code)
-│   ├── comparison_results.csv              # results of comparison between original and reimplemented model using diverse datasets and settings
+│   ├── ablation_results_original.csv                # results of ablation study
+│   ├── approximation_quality_results_original.csv   # results of recreating the MNIST Approximation Quality Experiment(see mnist.py in original code)
+│   ├── cats_and_dogs_results_original.csv           # results of testing simplex models on cats and dogs dataset
+│   ├── heartfailure_original.csv                    # results of testing simplex models on heartfailure dataset
+│   ├── mnist_results_original.csv                   # results of testing simplex models on mnist dataset
+│   ├── comparison_results.csv                       # results of comparison between original and reimplemented model using diverse datasets and settings
 │   ├── images                              # directory for created images
 │   ├── classifier                          # directory for trained and saved blackbox classifier models
+│   ├── original_experiment                 # directory for created plots for the MNIST Approximation Quality Experiment
+│   ├── presentation                        # directory for the pictures used for our presentation
 ├── original_code                       # directory of the repository of the original SimplEx code
+├── JML Projekt Poster final.pdf        # our presentation poster
 ├── README.md                           # this README
 ├── requirements.txt                    # the requirements for running the code
 ├── src                                 # directory for our code
@@ -70,13 +76,13 @@ The reimplemented model can be found in the file `src/simplex_versions.py`. The 
 
 To execute some tests on all datasets, execute the following command in the root directory:
 
-`python3 src/main.py -ablation`.
+`python3 src/main.py -all`.
 
-The results will be saced in `files/comparison_results.csv`.
+The results will be saved in `files/comparison_results.csv`.
 
 ### Compact Simplex
 
-We also condensed the original SimplEx model from the authors' github repo in a single function call, to make the ablation study easier. In our code, we called this model `compact original`. The results and learned weights of this model is identical to the original, which can also be seen in the ablation study. 
+We also condensed the original SimplEx model from the authors' github repo in a single function call, to make the ablation study easier. In our code, we called this model `compact original`. The results and learned weights of this model are identical to the original, which can also be seen in the ablation study. 
 
 ## Evaluation using Original Dataset
 
@@ -91,7 +97,7 @@ Results of the original model, the compact original and the reimplemented model 
 The results will be written to the file `/files/mnist_results.csv`.
 
 
-The reimplemented model achieved similar results to the original model, which are goor overall. TODO mehr
+The reimplemented model achieved similar results to the original model, which are good overall. We see differences when using small decomposition sizes as the regularization of the original model gets better results.
 
 
 
@@ -109,6 +115,18 @@ The cats and dogs classifier is a CNN with three convolutional and two linear la
 The other model is a 4-layer linear neural network. 
 Model training for one cats and dogs classifer over 40 epochs takes roughly 2 hours, pre-trained models are provided in files/models. They each achieve a test accuracy of roughly 87%.
 It is an interesting data set as the input images are 150x150 pixels and are harder to classify as the pictures vary more in the positioning of the object to classify and more noise and background is present.
+
+Results of the original model, the compact original and the reimplemented model with different parameters on the Cats and Dogs dataset can be found in  `/files/cats_and_dogs_results_original.csv`. To run the test, run the following command in the root directory:
+
+`python3 src/main.py -cats_and_dogs`
+
+The results will be written to the file `/files/cats_and_dogs_results.csv`.
+
+Results for the Heartfailure Dataset can be found in `/files/heartfailure_original.csv`. To run the test, run the following command in the root directory:
+
+`python3 src/main.py -heartfailure`
+
+The results will be written to the file `/files/heartfailure.csv`.
 
 ## Extensions of the Approach
 We extended the apporach by providing an automatic corpus creator, that samples incrementally from a provided dataloader and provides a corpus with class balance. It performs reservoir sampling to sample uniformly random.  
@@ -172,24 +190,22 @@ We can observe that the models without a softmax layer (models #4, #7, and #9) s
 When using our own reimplementations (model #4, #7), the weight of the highest contributing corpus example however is extremely small, mostly a little over 1/(corpus size). When using the compact original model, the weights are higher because of the used regularization. In all three cases, however, the most important corpus examples for explaining the test example have mostly the wrong label and the according ids are not identical to the ones from the original model. The model with the randomly initialized weights (#7) seems to be worse than the other two.  
 The bad performance of omitting the softmax layer makes sense as the distribution of the weights to add up to 1 after each epoch is missing.
 
-...
+When using a normalization layer instead of a softmax layer, we see that the model does not train when we initialize the weights with 0 (model #5). When initializing the models at random (model # 8), the model achieves good results with relatively high weights.
 
-kurz zusammengefasst (später ausführlicher)
-* no softmax original model compact hat insgesamt höhere einzelne weights als das von unserer reimpmlementation (vermutlich wegen regularisierung) aber die erklärenden bilder sind immer teilweise schlecht (TODO genauer nochmal verlgeichen- manchmal sind top x bilder auch okay und nach an original)
-* normalize layer mit 0 weights trainiert überhaupt nicht - weight immer 1/corpus size, r2 immer schlecht
-* normalize layer mit random weights scheinbar wie no softmax, overfitted; gewichte höher als ohne softmax (nochmal überprüfen)
-* reimplemented model mit randomisierten inistialen weights ist etwa genauso gut wie mit zu 0 gesetzen weights. 
-* original model ohne regularisierung: r2 immer gleich weil gewichte immer gleich sind.
-* reimplemented model bei decomposition size = corpus size genau gleich wie original. Bei decompsition size < corpus size sind die r2 werte etwas schlechter (~ 3 Prozentpunkte?, genauer checken) und die gewichte vom original höher -> vermutlich wegen der regularisierung. TODO: das gehört (auch) zum Punkt "vergleich reimplemented vs original"
+We observe that our reimplemented model with initialized random weights (model #6) seems to be as good as the one initilaized with zeros (model # 3).
+
+Observing the results of the original model without regularization (model # 10), we see that the r2 values stays the same. This makes sense as th model is now trained independent of the decomposition size without compensating for this in any other way.
+
 ## Testing
 
-### Unit tests
-to execute unit tests, run `python -m tests.unittests` in the root directory
+To execute unit tests, run `python -m tests.unittests` in the root directory.
 
 ## Technical 
 
-The ablation study was done on a hp-Elitebook with an 11th Gen Intel® Core™ i7-1185G7 @ 3.00GHz × 8 CPU running Ubuntu 20. An experiment run with all 10 model types used for the ablation study took circa 30 seconds. The overall 560 combinations took about 40 minutes. There was no notable difference between training times of the different models.
+The ablation study was done on a hp-Elitebook with an 11th Gen Intel® Core™ i7-1185G7 @ 3.00GHz × 8 CPU, 16GB RAM running Ubuntu 20. An experiment run with all 10 model types used for the ablation study took circa 30 seconds. The overall 560 combinations took about 40 minutes. There was no notable difference between training times of the different models.
+The original experiment (`python3 src/main.py -original`) with all in all 120 combination was also done on this computer. It took around 1 hour. 
 
 The unittests were done on a Surface Pro 2018 with an 11th Gen Intel® Core™ i7-1165G7 @ 2.80GHz x 2, 32GB Ram running Windows 10. A complete unit test took 20 minutes, with all the classifiers beeing loaded from disk.
 
 Cats and dogs classsifer training was performed with 11th Gen Intel(R) Core(TM) i5-11320H @ 3.20GHz with 16GB Ram running Windows Home 11. As mentioned before trainign over 40 epochs took 2 hours for each model.
+
