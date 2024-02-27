@@ -1,9 +1,17 @@
+from time import gmtime, strftime
 from captum.attr._utils.visualization import visualize_image_attr
+import inspect
 from math import isclose
 from matplotlib import pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
 import torch
 import os
 
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+SAVE_PATH=os.path.join(parentdir, "files")
 CAD_TRAINDIR = os.path.join("data","Animal Images","train")
 CAD_TESTDIR = os.path.join("data","Animal Images","test")
 HEART_FAILURE_DIR = os.path.join("data","heart.csv")
@@ -121,3 +129,67 @@ def jacobian_compare_score(a:torch.Tensor, b:torch.Tensor):
 def create_input_baseline(corpus_shape):
     
     return torch.zeros(corpus_shape)
+
+def plot_results():
+    """
+    Read results from csv and plot per metric.
+    """
+    results_df = pd.read_csv(os.path.join(parentdir, "files", "approximation_quality_results_original.csv"))
+
+    decomposition_sizes = [3, 5, 10, 20, 50]
+
+    results_df["explainer"] = results_df["model_type"] + "_" + results_df["dataset"]
+    explainer_names = pd.unique(results_df["explainer"])
+    explainer_names.sort()
+
+    # settings for plot
+    explainer_names = list(explainer_names)
+    explainer_names.sort()
+    metric_names = ["r2_latent", "r2_output"]
+    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:blue", "tab:orange", "tab:green", "tab:red"]
+    styles = ["--", "--", "-", "--",":", ":", ":", ":"]
+
+    plt.rc("text", usetex=False)
+    params = {"text.latex.preamble": r"\usepackage{amsmath}"}
+    plt.rcParams.update(params)
+    
+    sns.set(font_scale=2.0)
+    sns.set_style("white")
+    sns.set_palette("colorblind")
+    mean_df = results_df.groupby(["explainer", "n_keep"]).aggregate("mean", numeric_only=True).unstack(level=0)
+    std_df = results_df.groupby(["explainer", "n_keep"]).aggregate(np.std).unstack(level=0)
+
+    # one file per metric (here 2 metrics)
+    for m, metric_name in enumerate(metric_names):
+        plt.figure(m + 1, figsize=(12,10))
+        # add all results to the plot
+        for c, s, explainer_name in zip(colors, styles, explainer_names):
+            plt.plot(
+                decomposition_sizes,
+                mean_df[metric_name, explainer_name],
+                linestyle=s,
+                label=explainer_name,
+                color=c,
+            )
+            # # plots std
+            # plt.fill_between(
+            #     decomposition_sizes,
+            #     mean_df[metric_name, explainer_name] - std_df[metric_name, explainer_name],
+            #     mean_df[metric_name, explainer_name] + std_df[metric_name, explainer_name],
+            #     alpha=0.2,
+            # )
+
+    save_path = os.path.join(SAVE_PATH, "original_experiment")
+    timestamp = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
+    plt.figure(1)
+    # plt.ylim((0,1))
+    plt.xlabel(r"decomposition size")
+    plt.ylabel(r"$R^2_{\mathcal{H}}$")
+    plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
+    plt.savefig(os.path.join(save_path, f"r2_latent_{timestamp}.pdf"), bbox_inches="tight")
+    plt.figure(2)
+    plt.ylim((0,1))
+    plt.xlabel(r"decomposition size")
+    plt.ylabel(r"$R^2_{\mathcal{Y}}$")
+    plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
+    plt.savefig(os.path.join(save_path, f"r2_output{timestamp}.pdf"), bbox_inches="tight")
