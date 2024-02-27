@@ -473,8 +473,11 @@ def run_original_experiment():
 
     # settings for plot
     explainer_names = list(explainer_names)
+    explainer_names.sort()
     metric_names = ["r2_latent", "r2_output"]
-    line_styles = {f"{explainer_names[0]}": "--", f"{explainer_names[1]}": ":", f"{explainer_names[2]}": "--", f"{explainer_names[3]}": ":", f"{explainer_names[4]}": "--", f"{explainer_names[5]}": ":", f"{explainer_names[6]}": "--", f"{explainer_names[7]}": ":"}
+    colors = ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:blue", "tab:orange", "tab:green", "tab:red"]
+    styles = ["--", "--", "-", "--",":", ":", ":", ":"]
+
     
     plt.rc("text", usetex=False)
     params = {"text.latex.preamble": r"\usepackage{amsmath}"}
@@ -490,29 +493,31 @@ def run_original_experiment():
     for m, metric_name in enumerate(metric_names):
         plt.figure(m + 1, figsize=(12,10))
         # add all results to the plot
-        for explainer_name in explainer_names:
+        for c, s, explainer_name in zip(colors, styles, explainer_names):
             plt.plot(
                 decomposition_sizes,
                 mean_df[metric_name, explainer_name],
-                line_styles[explainer_name],
+                linestyle=s,
                 label=explainer_name,
+                color=c,
             )
-            plt.fill_between(
-                decomposition_sizes,
-                mean_df[metric_name, explainer_name] - std_df[metric_name, explainer_name],
-                mean_df[metric_name, explainer_name] + std_df[metric_name, explainer_name],
-                alpha=0.2,
-            )
+            # plt.fill_between(
+            #     decomposition_sizes,
+            #     mean_df[metric_name, explainer_name] - std_df[metric_name, explainer_name],
+            #     mean_df[metric_name, explainer_name] + std_df[metric_name, explainer_name],
+            #     alpha=0.2,
+            # )
 
     save_path = os.path.join(SAVE_PATH, "original_experiment")
     timestamp = strftime("%Y-%m-%d_%H-%M-%S", gmtime())
     plt.figure(1)
-    plt.ylim((0,1))
+    # plt.ylim((0,1))
     plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{H}}$")
     plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
     plt.savefig(os.path.join(save_path, f"r2_latent_{timestamp}.pdf"), bbox_inches="tight")
     plt.figure(2)
+    plt.ylim((0,1))
     plt.xlabel(r"decomposition size")
     plt.ylabel(r"$R^2_{\mathcal{Y}}$")
     plt.legend(loc='lower right', fancybox=True, framealpha=0.5)
